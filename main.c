@@ -5,6 +5,9 @@
 
 #include "video_ss.h"
 
+extern struct DispOpr *display_get_module(const char *name);
+extern struct VideoOpr *video_get_module(const char *name);
+
 int main(int argc, char *argv[])
 {
 	int iLcdWidth;
