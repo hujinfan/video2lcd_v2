@@ -5,8 +5,13 @@
 
 typedef struct DispOpr {
 	char *name;
-	int (*DeviceInit)(void);
-	int (*CleanScreen)(void);
+	int iXres;
+	int iYres;
+	int iBpp;
+	int iLineWidth;
+	unsigned char *pucDispMem;
+	int (*DeviceInit)(struct DispOpr *pDispOpr);
+	int (*CleanScreen)(unsigned int dwBackColor);
 	int (*ShowPage)(void);
 
 	struct list_head list;
