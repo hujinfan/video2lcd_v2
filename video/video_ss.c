@@ -8,7 +8,7 @@
 /* 将该子系统里所有模块都装入链表 */
 LIST_HEAD(video_list);
 
-struct video_module *video_get_module(const char *name)
+struct VideoOpr *video_get_module(const char *name)
 {
 	struct VideoOpr *pModule;
 
@@ -18,6 +18,7 @@ struct video_module *video_get_module(const char *name)
 			return pModule;
 	}
 
+	printf("no sub module ERROR\n");
 	return NULL;
 }
 
@@ -36,13 +37,13 @@ int video_init(void)
 }
 
 /* 调用各个子模块的初始化函数 */
-void video_modules_init(void)
+void video_modules_init(struct VideoOpr *pVideoOpr, struct VideoDevice *pVideoDevice)
 {
 	struct VideoOpr *pModule;
 
 	list_for_each_entry(pModule, &video_list, list)
 	{
 		if (pModule->DeviceInit)
-			pModule->DeviceInit();
+			pModule->DeviceInit(pVideoOpr, pVideoDevice);
 	}
 }
