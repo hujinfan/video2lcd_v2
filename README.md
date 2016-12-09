@@ -46,3 +46,10 @@ module : fb_md.c _md表示module后缀
 	:argdo! %s/MODULE/fb/ge | update
 
 手动修改顶层和子目录Makefile
+
+## 添加video子系统
+
+	cp skeleton/subsystem.c video/video_ss.c
+	cp skeleton/module.c video/video_md.c
+	cp skeleton/Makefile video/Makefile
+	cp include/SUBSYSTEM_ss.h include/video_ss.h

@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "video_manager.h"
+#include "video_ss.h"
 
 int main(int argc, char *argv[])
 {
@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
 	struct DispOpr *pDispOpr;
 
 	display_init();
-	DispOprs_init();
+	display_modules_init();
 
 	pDispOpr = display_get_module("fb");
 	GetDispResolution(pDispOpr, &iLcdWidth, &iLcdHeight, &iLcdBpp);
@@ -23,6 +23,9 @@ int main(int argc, char *argv[])
 
 	/* 设置framebuffer */
 	GetVideoBufForDisplay(pDispOpr, &tFrameBuf);
+
+	video_init();
+	video_modules_init();
 
 	return 0;
 }

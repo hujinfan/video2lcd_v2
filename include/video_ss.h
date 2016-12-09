@@ -3,6 +3,7 @@
 
 #include <linux/videodev2.h>
 #include "pic_operation.h"
+#include "klist.h"
 
 typedef struct VideoDevice T_VideoDevice, *PT_VideoDevice;
 typedef struct VideoOpr T_VideoOpr, *PT_VideoOpr;
@@ -16,14 +17,14 @@ typedef struct VideoBuf T_VideoBuf, *PT_VideoBuf;
  */
 struct VideoOpr {
 	char *name;/* 具体模块的名字 */
-	int (*InitDevice)();
+	int (*DeviceInit)(void);
 	int (*ExitDevice)();
 	int (*GetFrame)(PT_VideoDevice ptVideoDevice, PT_VideoBuf ptVideoBuf);
 	int (*GetFormat)();
 	int (*PutFrame)(PT_VideoDevice ptVideoDevice, PT_VideoBuf ptVideoBuf);
 	int (*StartDevice)(PT_VideoDevice ptVideoDevice);
 	int (*StopDevice)();
-	struct VideoOpr *ptNext;
+	struct list_head list;
 };
 
 struct VideoDevice {

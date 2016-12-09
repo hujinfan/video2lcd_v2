@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include "display_ss.h"
-#include "video_manager.h"
+#include "video_ss.h"
 
 /* 将该子系统里所有模块都装入链表 */
 LIST_HEAD(display_list);
@@ -24,7 +24,7 @@ struct DispOpr *display_get_module(const char *name)
 }
 
 /* 调用各个子模块的初始化函数 */
-void DispOprs_init(void)
+void display_modules_init(void)
 {
 	struct DispOpr *pModule;
 

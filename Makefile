@@ -22,6 +22,7 @@ TARGET := video2lcd
 
 obj-y += main.o
 obj-y += display/
+obj-y += video/
 
 all :
 	make -C ./ -f $(TOPDIR)/Makefile.build
