@@ -23,6 +23,7 @@ static struct VideoConvert bModule = {
 
 int Rgb2RgbInit(void)
 {
+	printf("Convert module rgb2rgb init\n");
 	/* 调用子系统提供的注册接口向子系统注册模块 */
 	return convert_register(&bModule.list);
 }

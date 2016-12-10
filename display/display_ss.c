@@ -48,6 +48,7 @@ int display_register(struct list_head *list)
 /* 开放给应用层调用 */
 int display_init(void)
 {
+	printf("Display subsystem init\n");
 	/* 调用个模块初始化函数 */
 	fb_init();
 }

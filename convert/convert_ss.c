@@ -33,6 +33,8 @@ int VideoConvertInit(void)
 {
 	int iError;
 
+	printf("Convert subsystem init\n");
+
 	iError = Yuv2RgbInit();
 	iError |= Mjpeg2RgbInit();
 	iError |= Rgb2RgbInit();
@@ -56,7 +58,6 @@ struct VideoConvert *GetVideoConvertForFormats(int iPixelFormatIn, int iPixelFor
 {
 	struct VideoConvert *pModule;
 
-	printf("%s, %d\n", __FUNCTION__, __LINE__);
 	list_for_each_entry(pModule, &convert_list, list)
 	{
 		if (pModule->isSupport(iPixelFormatIn, iPixelFormatOut))

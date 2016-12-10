@@ -23,7 +23,6 @@ static int FbDeviceInit(struct DispOpr *pDispOpr)
 {
 	int iError;
 	int iFd;
-	printf("%s, %d\n", __FUNCTION__, __LINE__);
 
 	iFd = open("/dev/fb0", O_RDWR);
 	if (iFd < 0)
@@ -132,6 +131,7 @@ static T_DispOpr pDispOpr = {
 
 int fb_init(void)
 {
+	printf("Display module fb init\n");
 	/* 调用子系统提供的注册接口向子系统注册模块 */
 	return display_register(&pDispOpr.list);
 }

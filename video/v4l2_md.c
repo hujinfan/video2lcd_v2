@@ -178,9 +178,7 @@ static int V4l2DeviceInit(struct VideoOpr *pVideoOpr, struct VideoDevice *ptVide
 	}
 
 	ptVideoDevice->ptVideoOpr = pVideoOpr;
-	//ptVideoDevice->ptVideoOpr = &g_tV4l2VideoOpr;
 
-	printf("%s, %d Done\n", __FUNCTION__, __LINE__);
 	return 0;
 err_exit:
 	close(iFd);
@@ -273,7 +271,7 @@ static int V4l2PutFrameForStreaming(PT_VideoDevice ptVideoDevice, PT_VideoBuf pt
 	return 0;
 }
 static struct VideoOpr bModule = {
-	.name = "v4l2_name",
+	.name = "v4l2",
 	.device_name = "/dev/video0",
 	.DeviceInit = V4l2DeviceInit,
 	.StartDevice = V4l2StartDevice,
@@ -283,6 +281,7 @@ static struct VideoOpr bModule = {
 
 int v4l2_init(void)
 {
+	printf("Video module v4l2 init\n");
 	/* 调用子系统提供的注册接口向子系统注册模块 */
 	return video_register(&bModule.list);
 }

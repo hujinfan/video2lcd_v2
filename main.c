@@ -10,23 +10,28 @@ extern struct VideoOpr *video_get_module(const char *name);
 extern struct VideoConvert *GetVideoConvertForFormats(int iPixelFormatIn, int iPixelFormatOut);
 extern int video_convert2rgb(struct VideoConvert *pModule, struct VideoBuf *ptVideoBufIn, struct VideoBuf *ptVideoBufOut);
 
+#define DEFAULT_DISPLAY_MODULE "fb"
+#define DEFAULT_VIDEO_MODULE "v4l2"
+
 int main(int argc, char *argv[])
 {
 	int i, j;
+	int lcd_row, lcd_col;
+	int cam_row, cam_col;
 
 	/*
 	 * 分配两块内存区域用于临时存放视频数据
 	 * 因为一个像素点用16bpp表示
 	 * 所以数据类型用short
-	 * 摄像头采集到的数据是320x240的,放入mem320x240
+	 * 摄像头采集到的数据是320x240的,放入cam_mem
 	 * LCD显示器的尺寸是240x320
-	 * 把mem320x240里的数据放入mem240x320
-	 * 最后把mem240x320放入到framebuffer
+	 * 把cam_mem里的数据放入lcd_mem
+	 * 最后把lcd_mem放入到framebuffer
 	 */
 
 	/*
 	 *
-	 * mem320x240---->	-----------320------------>x
+	 * cam_mem---->	-----------320------------>x
 	 * 					|         |
 	 * 					|         |
 	 * 					240       |
@@ -38,7 +43,7 @@ int main(int argc, char *argv[])
 
 	/*
 	 *
-	 * mem240x320---->	------240----->x
+	 * lcd_mem---->	------240----->x
 	 * 					|    |
 	 * 					|    |
 	 * 					|----p(y, 320 - x)
@@ -51,12 +56,12 @@ int main(int argc, char *argv[])
 	 * 					V
 	 * 					y
 	 */
-	unsigned short mem320x240[320][240];
-	unsigned short mem240x320[240][320];
+	unsigned short **cam_mem;
+	unsigned short **lcd_mem;
 
 	/* 用于操作每一个像素点 */
 	unsigned short *s = NULL;
-	unsigned short *d = NULL;;
+	unsigned short *d = NULL;
 
 	int iError;
 	int iLcdWidth;
@@ -83,9 +88,21 @@ int main(int argc, char *argv[])
 	display_modules_init();
 
 	/* 选取一个默认的显示模块 */
-	pDispOpr = display_get_module("fb");
+	pDispOpr = display_get_module(DEFAULT_DISPLAY_MODULE);
 	GetDispResolution(pDispOpr, &iLcdWidth, &iLcdHeight, &iLcdBpp);
-	printf("x(%d), y(%d), bpp(%d)\n", iLcdWidth, iLcdHeight, iLcdBpp);
+	printf("LCD display format [%d x %d]\n", iLcdWidth, iLcdHeight);
+	lcd_row = iLcdWidth;
+	lcd_col = iLcdHeight;
+
+	/* 动态分配二维数组 */
+	lcd_mem = (unsigned short **)malloc(sizeof(unsigned short *) * lcd_row);
+	if (NULL == lcd_mem)
+	{
+		printf("no mem ERROR\n");
+		return -1;
+	}
+	for (i = 0; i < lcd_row; i++)
+		lcd_mem[i] = (unsigned short *)malloc(sizeof(unsigned short) * lcd_col);
 
 	/* 设置framebuffer */
 	GetVideoBufForDisplay(pDispOpr, &tFrameBuf);
@@ -95,8 +112,21 @@ int main(int argc, char *argv[])
 	video_init();
 
 	/* 选取一个视频模块并初始化 */
-	pVideoOpr = video_get_module("v4l2_name");
+	pVideoOpr = video_get_module(DEFAULT_VIDEO_MODULE);
 	video_modules_init(pVideoOpr, &tVideoDevice);
+	printf("CAMERA data format [%d x %d]\n", tVideoDevice.iWidth, tVideoDevice.iHeight);
+
+	/* 动态分配二维数组 */
+	cam_row = tVideoDevice.iWidth;
+	cam_col = tVideoDevice.iHeight;
+	cam_mem = (unsigned short **)malloc(sizeof(unsigned short *) * cam_row);
+	if (NULL == cam_mem)
+	{
+		printf("no mem ERROR\n");
+		return -1;
+	}
+	for (i = 0; i < cam_row; i++)
+		cam_mem[i] = (unsigned short *)malloc(sizeof(unsigned short) * cam_col);
 
 	iPixelFormatOfVideo = tVideoDevice.iPixelFormat;
 
@@ -170,19 +200,19 @@ int main(int argc, char *argv[])
 		/* 操作framebuffer */
 		d = (unsigned short *)tFrameBuf.tPixelDatas.aucPixelDatas;
 
-		/* 把摄像头采集的数据放入mem320x240*/
-		for (i = 0; i < 240; i++)
-			for (j = 0; j < 320; j++)
-				mem320x240[j][i] = *s++;
+		/* 把摄像头采集的数据放入cam_mem */
+		for (i = 0; i < cam_col; i++)
+			for (j = 0; j < cam_row; j++)
+				cam_mem[j][i] = *s++;
 
-		/* 把mem320x240里的数据转存到mem240x320 */
-		for (i = 0; i < 240; i++)
-			for (j = 0; j < 320; j++)
-				mem240x320[i][320 - j] = mem320x240[j][i];
+		/* 把cam_mem里的数据转存到lcd_mem */
+		for (i = 0; i < cam_col; i++)
+			for (j = 0; j < cam_row; j++)
+				lcd_mem[i][cam_row - j] = cam_mem[j][i];
 
-		for (i = 0; i < 320; i++)
-			for (j = 0; j < 240; j++)
-				*d++ = mem240x320[j][i];
+		for (i = 0; i < lcd_col; i++)
+			for (j = 0; j < lcd_row; j++)
+				*d++ = lcd_mem[j][i];
 
 		/* 释放该帧数据,重新放入采集视频的队列 */
 		iError = tVideoDevice.ptVideoOpr->PutFrame(&tVideoDevice, &tVideoBuf);
@@ -192,5 +222,15 @@ int main(int argc, char *argv[])
 			return -1;
 		}
 	}
+
+	/* 释放内存 */
+    for (i = 0; i < lcd_row; i++)
+        free(lcd_mem[i]);
+    free(lcd_mem);
+
+    for (i = 0; i < cam_row; i++)
+        free(cam_mem[i]);
+    free(cam_mem);
+
 	return 0;
 }

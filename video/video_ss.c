@@ -32,6 +32,7 @@ int video_register(struct list_head *list)
 /* 开放给应用层调用 */
 int video_init(void)
 {
+	printf("Video subsystem init\n");
 	/* 调用个模块初始化函数 */
 	v4l2_init();
 }
