@@ -188,10 +188,97 @@ err_exit:
 	return -1;
 }
 
+static int V4l2StartDevice(PT_VideoDevice ptVideoDevice)
+{
+	int iType = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	int iError;
+
+	iError = ioctl(ptVideoDevice->iFd, VIDIOC_STREAMON, &iType);
+	if (iError)
+	{
+		printf("ERROR, %s, %d\n", __FUNCTION__, __LINE__);
+		return -1;
+	}
+	return 0;
+}
+
+/* 获取一帧数据 */
+static int V4l2GetFrameForStreaming(PT_VideoDevice ptVideoDevice, PT_VideoBuf ptVideoBuf)
+{
+	struct pollfd tFds[1];
+	int iRet;
+	struct v4l2_buffer tV4l2Buf;
+
+	/* 等待数据 */
+	tFds[0].fd = ptVideoDevice->iFd;
+	tFds[0].events = POLLIN;
+
+
+#if 0
+#endif
+	iRet = poll(tFds, 1, -1);
+	if (iRet <= 0)
+	{
+		return -1;
+	}
+
+	/* 把视频缓冲区放入队列 */
+	memset(&tV4l2Buf, 0, sizeof(struct v4l2_buffer));
+	tV4l2Buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	tV4l2Buf.memory = V4L2_MEMORY_MMAP;
+
+	iRet = ioctl(ptVideoDevice->iFd, VIDIOC_DQBUF, &tV4l2Buf);
+	if (iRet < 0)
+	{
+		return -1;
+	}
+
+	/* 标识当前哪个缓冲区有视频数据 */
+	ptVideoDevice->iVideoBufCurIndex = tV4l2Buf.index;
+
+	/*
+	 * 下面这里写的感觉有点怪异
+	 * 没有用tV4l2Buf,用的是ptVideoDevice
+	 */
+	ptVideoBuf->iPixelFormat = ptVideoDevice->iPixelFormat;
+	ptVideoBuf->tPixelDatas.iWidth = ptVideoDevice->iWidth;
+	ptVideoBuf->tPixelDatas.iHeight = ptVideoDevice->iHeight;
+	ptVideoBuf->tPixelDatas.iBpp = (ptVideoDevice->iPixelFormat == V4L2_PIX_FMT_YUYV) ? 16 :\
+	(ptVideoDevice->iPixelFormat == V4L2_PIX_FMT_MJPEG) ? 0 :\
+	(ptVideoDevice->iPixelFormat == V4L2_PIX_FMT_RGB565) ? 16 : 0;
+
+	ptVideoBuf->tPixelDatas.iLineBytes = ptVideoDevice->iWidth * ptVideoBuf->tPixelDatas.iBpp / 8;
+	ptVideoBuf->tPixelDatas.iTotalBytes = tV4l2Buf.bytesused;
+	ptVideoBuf->tPixelDatas.aucPixelDatas = ptVideoDevice->pucVideoBuf[tV4l2Buf.index];
+
+	return 0;
+}
+
+static int V4l2PutFrameForStreaming(PT_VideoDevice ptVideoDevice, PT_VideoBuf ptVideoBuf)
+{
+	/* VIDIOC_QBUF */
+	struct v4l2_buffer tV4l2Buf;
+	int iError;
+
+	memset(&tV4l2Buf, 0, sizeof(struct v4l2_buffer));
+	tV4l2Buf.index = ptVideoDevice->iVideoBufCurIndex;
+	tV4l2Buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	tV4l2Buf.memory = V4L2_MEMORY_MMAP;
+
+	iError = ioctl(ptVideoDevice->iFd, VIDIOC_QBUF, &tV4l2Buf);
+	if (iError)
+	{
+		return 0;
+	}
+	return 0;
+}
 static struct VideoOpr bModule = {
 	.name = "v4l2_name",
 	.device_name = "/dev/video0",
 	.DeviceInit = V4l2DeviceInit,
+	.StartDevice = V4l2StartDevice,
+	.GetFrame = V4l2GetFrameForStreaming,
+	.PutFrame = V4l2PutFrameForStreaming,
 };
 
 int v4l2_init(void)

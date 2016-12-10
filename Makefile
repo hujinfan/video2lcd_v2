@@ -14,7 +14,7 @@ export STRIP OBJCOPY OBJDUMP
 
 #CFLAGS := -Wall -Werror -O2 -g
 CFLAGS += -I $(shell pwd)/include
-LDFLAGS :=
+LDFLAGS := -lm -ljpeg
 
 TOPDIR := $(shell pwd)
 
@@ -23,6 +23,7 @@ TARGET := video2lcd
 obj-y += main.o
 obj-y += display/
 obj-y += video/
+obj-y += convert/
 
 all :
 	make -C ./ -f $(TOPDIR)/Makefile.build
