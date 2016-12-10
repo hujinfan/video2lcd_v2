@@ -1,0 +1,5 @@
+*.vim
+*.o
+video2lcd
+*.d
+tags
