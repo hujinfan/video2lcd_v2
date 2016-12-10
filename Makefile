@@ -28,15 +28,16 @@ obj-y += convert/
 all :
 	make -C ./ -f $(TOPDIR)/Makefile.build
 	$(CC) $(LDFLAGS) -o $(TARGET) built-in.o
+	ctags -R
 
 clean:
 	rm -f $(shell find -name "*.o")
-	rm -f $(TARGET)
+	rm -f $(TARGET) tags
 
 distclean:
 	rm -f $(shell find -name "*.o")
 	rm -f $(shell find -name "*.d")
-	rm -f $(TARGET)
+	rm -f $(TARGET) tags
 
 export CFLAGS LDFLAGS
 export TOPDIR
