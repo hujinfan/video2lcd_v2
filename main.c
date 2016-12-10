@@ -64,21 +64,25 @@ int main(int argc, char *argv[])
 	int iLcdBpp;
 	int iPixelFormatOfDisp;
 	int iPixelFormatOfVideo;
+
 	struct VideoDevice tVideoDevice;
 	struct VideoConvert *ptVideoConvert;
-
 	struct DispOpr *pDispOpr;
 	struct VideoOpr *pVideoOpr;
-
 	struct VideoBuf	*ptVideoBufCur;
+
 	struct VideoBuf tVideoBuf;//摄像头采集到的数据
 	struct VideoBuf tConvertBuf;//转换后的数据
 	struct VideoBuf tZoomBuf;//缩放后的数据
 	struct VideoBuf tFrameBuf;//最终刷入framebuf的数据
 
+	/* 显示子系统初始化 */
 	display_init();
+
+	/* 所有显示模块初始化 */
 	display_modules_init();
 
+	/* 选取一个默认的显示模块 */
 	pDispOpr = display_get_module("fb");
 	GetDispResolution(pDispOpr, &iLcdWidth, &iLcdHeight, &iLcdBpp);
 	printf("x(%d), y(%d), bpp(%d)\n", iLcdWidth, iLcdHeight, iLcdBpp);
@@ -87,26 +91,31 @@ int main(int argc, char *argv[])
 	GetVideoBufForDisplay(pDispOpr, &tFrameBuf);
 	iPixelFormatOfDisp = tFrameBuf.iPixelFormat;
 
+	/* 视频子系统初始化 */
 	video_init();
+
+	/* 选取一个视频模块并初始化 */
 	pVideoOpr = video_get_module("v4l2_name");
 	video_modules_init(pVideoOpr, &tVideoDevice);
+
 	iPixelFormatOfVideo = tVideoDevice.iPixelFormat;
 
 	ShowVideoOpr();
 
-
-	/* 初始化视频管理模块 */
+	/* 视频转换子系统初始化 */
 	VideoConvertInit();
 	ShowVideoConvert();
 
 	/* 根据采集到的视频数据格式选取一个合适的转换函数 */
-	ptVideoConvert = GetVideoConvertForFormats(tVideoDevice.iPixelFormat, iPixelFormatOfDisp);//这里暂时写24因为LCD的代码还没写
+	ptVideoConvert = GetVideoConvertForFormats(tVideoDevice.iPixelFormat, iPixelFormatOfDisp);
 	if (NULL == ptVideoConvert)
 	{
 		printf("can not support this format convert\n");
 		return -1;
 	}
+
 	ShowVideoConvertInfo(ptVideoConvert);
+
 	/* 启动摄像头 */
 	iError = tVideoDevice.ptVideoOpr->StartDevice(&tVideoDevice);
 	if (iError)
@@ -144,7 +153,6 @@ int main(int argc, char *argv[])
 		/* 2. 判断是否需要转换为RGB */
 		if (iPixelFormatOfVideo != iPixelFormatOfDisp)
 		{
-//			iError = ptVideoConvert->Convert(&tVideoBuf, &tConvertBuf);
 			iError = video_convert2rgb(ptVideoConvert, &tVideoBuf, &tConvertBuf);
 			if (iError)
 			{
