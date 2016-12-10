@@ -13,6 +13,8 @@ int main(int argc, char *argv[])
 	int iLcdWidth;
 	int iLcdHeight;
 	int iLcdBpp;
+	int iPixelFormatOfDisp;
+	int iPixelFormatOfVideo;
 	struct VideoBuf tFrameBuf;//最终刷入framebuf的数据
 	struct VideoDevice tVideoDevice;
 
@@ -28,10 +30,14 @@ int main(int argc, char *argv[])
 
 	/* 设置framebuffer */
 	GetVideoBufForDisplay(pDispOpr, &tFrameBuf);
+	iPixelFormatOfDisp = tFrameBuf.iPixelFormat;
 
 	video_init();
 	pVideoOpr = video_get_module("v4l2_name");
 	video_modules_init(pVideoOpr, &tVideoDevice);
+	iPixelFormatOfVideo = tVideoDevice.iPixelFormat;
+
+	ShowVideoOpr();
 
 	return 0;
 }

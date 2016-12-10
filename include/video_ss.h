@@ -17,6 +17,7 @@ typedef struct VideoBuf T_VideoBuf, *PT_VideoBuf;
  */
 struct VideoOpr {
 	char *name;/* 具体模块的名字 */
+	char *device_name;
 	int (*DeviceInit)(char *strDevName, PT_VideoDevice ptVideoDevice);
 	int (*ExitDevice)();
 	int (*GetFrame)(PT_VideoDevice ptVideoDevice, PT_VideoBuf ptVideoBuf);

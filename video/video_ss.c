@@ -47,3 +47,11 @@ void video_modules_init(struct VideoOpr *pVideoOpr, struct VideoDevice *pVideoDe
 			pModule->DeviceInit(pVideoOpr, pVideoDevice);
 	}
 }
+
+void ShowVideoOpr(void)
+{
+	struct VideoOpr *pModule;
+
+	list_for_each_entry(pModule, &video_list, list)
+		printf("registered video opr %s\n", pModule->name);
+}

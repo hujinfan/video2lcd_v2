@@ -40,10 +40,8 @@ static int V4l2DeviceInit(struct VideoOpr *pVideoOpr, struct VideoDevice *ptVide
 	struct v4l2_requestbuffers tV4l2ReqBuffs;
 	struct v4l2_buffer tV4l2Buf;
 
-
-	printf("%s, %d\n", __FUNCTION__, __LINE__);
 	/* 打开设备 */
-	iFd = open(pVideoOpr->name, O_RDWR);
+	iFd = open(pVideoOpr->device_name, O_RDWR);
 	if (iFd < 0)
 	{
 		printf("open %s ERROR\n", pVideoOpr->name);
@@ -182,7 +180,7 @@ static int V4l2DeviceInit(struct VideoOpr *pVideoOpr, struct VideoDevice *ptVide
 	ptVideoDevice->ptVideoOpr = pVideoOpr;
 	//ptVideoDevice->ptVideoOpr = &g_tV4l2VideoOpr;
 
-	printf("%s, %d\n", __FUNCTION__, __LINE__);
+	printf("%s, %d Done\n", __FUNCTION__, __LINE__);
 	return 0;
 err_exit:
 	close(iFd);
@@ -192,6 +190,7 @@ err_exit:
 
 static struct VideoOpr bModule = {
 	.name = "v4l2_name",
+	.device_name = "/dev/video0",
 	.DeviceInit = V4l2DeviceInit,
 };
 
