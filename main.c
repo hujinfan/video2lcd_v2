@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
 		printf("can not support this format convert\n");
 		return -1;
 	}
-
+	ShowVideoConvertInfo(ptVideoConvert);
 	/* 启动摄像头 */
 	iError = tVideoDevice.ptVideoOpr->StartDevice(&tVideoDevice);
 	if (iError)

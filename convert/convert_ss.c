@@ -56,10 +56,14 @@ struct VideoConvert *GetVideoConvertForFormats(int iPixelFormatIn, int iPixelFor
 {
 	struct VideoConvert *pModule;
 
+	printf("%s, %d\n", __FUNCTION__, __LINE__);
 	list_for_each_entry(pModule, &convert_list, list)
 	{
 		if (pModule->isSupport(iPixelFormatIn, iPixelFormatOut))
+		{
+			printf("%s support!\n", pModule->name);
 			return pModule;
+		}
 	}
 
 	return NULL;
@@ -70,4 +74,9 @@ int video_convert2rgb(struct VideoConvert *pModule, struct VideoBuf *ptVideoBufI
 	int iError;
 	iError = pModule->Convert(ptVideoBufIn, ptVideoBufOut);
 	return iError;
+}
+
+void ShowVideoConvertInfo(struct VideoConvert *pModule)
+{
+	printf("current convert is %s\n", pModule->name);
 }
