@@ -172,7 +172,7 @@ static int Mjpeg2RgbConvertExit(PT_VideoBuf ptVideoBufOut)
 	return 0;
 }
 
-static struct VideoConvert bModule = {
+static struct VideoConvert convert_module = {
 	.name        = "mjpeg2rgb",
 	.isSupport   = isSupportMjpeg2Rgb,
 	.use_as_default = 0,
@@ -184,5 +184,5 @@ int Mjpeg2RgbInit(void)
 {
 	printf("Convert module mjpeg2rgb init\n");
 	/* 调用子系统提供的注册接口向子系统注册模块 */
-	return convert_register(&bModule.list);
+	return convert_register(&convert_module.list);
 }

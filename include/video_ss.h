@@ -31,12 +31,12 @@ struct VideoOpr {
 	char *device_name;
 	int use_as_default;
 
-	int (*DeviceInit)(struct VideoOpr *pVideoOpr);
+	int (*DeviceInit)(struct VideoOpr *pModule);
 	int (*ExitDevice)();
-	int (*GetFrame)(PT_VideoOpr pVideoOpr, PT_VideoBuf ptVideoBuf);
+	int (*GetFrame)(PT_VideoOpr pModule, PT_VideoBuf ptVideoBuf);
 	int (*GetFormat)();
-	int (*PutFrame)(PT_VideoOpr pVideoOpr, PT_VideoBuf ptVideoBuf);
-	int (*StartDevice)(PT_VideoOpr pVideoOpr);
+	int (*PutFrame)(PT_VideoOpr pModule, PT_VideoBuf ptVideoBuf);
+	int (*StartDevice)(PT_VideoOpr pModule);
 	int (*StopDevice)();
 
 	struct list_head list;
@@ -47,12 +47,6 @@ struct VideoBuf {
 	T_PixelDatas tPixelDatas;
 	int iPixelFormat;
 };
-
-/*
- * strDevName is the /dev/video* node
- * open the strDevName device to get what we want
- */
-int VideoDeviceInit(const char *strDevName, PT_VideoOpr pVideoOpr);
 
 /*
  * 提供给各个具体模块注册到video manager中来
