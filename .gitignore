@@ -3,3 +3,4 @@
 video2lcd
 *.d
 tags
+include/compile_time.h
