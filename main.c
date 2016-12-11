@@ -69,7 +69,6 @@ int main(int argc, char *argv[])
 	int iPixelFormatOfVideo;
 
 	struct VideoConvert *ptVideoConvert;
-	struct VideoOpr *pVideoOpr;
 	struct VideoBuf	*ptVideoBufCur;
 
 	struct VideoBuf tVideoBuf;//摄像头采集到的数据
@@ -110,8 +109,7 @@ int main(int argc, char *argv[])
 	/* 初始化视频模块 */
 	video_modules_init();
 
-	pVideoOpr = video_get_module(DEFAULT_VIDEO_MODULE);
-	get_camera_format(pVideoOpr, &cam_row, &cam_col, &iPixelFormatOfVideo);
+	get_camera_format(DEFAULT_VIDEO_MODULE, &cam_row, &cam_col, &iPixelFormatOfVideo);
 	printf("CAMERA data format [%d x %d]\n", cam_row, cam_col);
 
 	/* 动态分配二维数组 */
@@ -142,7 +140,7 @@ int main(int argc, char *argv[])
 	ShowVideoConvertInfo(ptVideoConvert);
 
 	/* 启动摄像头 */
-	iError = start_camera(pVideoOpr);
+	iError = start_camera(DEFAULT_VIDEO_MODULE);
 	if (iError)
 	{
 		printf("StartDevice %s error!!\n", argv[1]);
@@ -165,7 +163,7 @@ int main(int argc, char *argv[])
 	while (1)
 	{
 		/* 1. 读摄像头数据 */
-		iError = get_frame(pVideoOpr, &tVideoBuf);
+		iError = get_frame(DEFAULT_VIDEO_MODULE, &tVideoBuf);
 		if (iError)
 		{
 			printf("####get frame ERROR####\n");
@@ -210,7 +208,7 @@ int main(int argc, char *argv[])
 				*d++ = lcd_mem[j][i];
 
 		/* 释放该帧数据,重新放入采集视频的队列 */
-		iError = put_frame(pVideoOpr, &tVideoBuf);
+		iError = put_frame(DEFAULT_VIDEO_MODULE, &tVideoBuf);
 		if (iError)
 		{
 			printf("Put frame error\n");

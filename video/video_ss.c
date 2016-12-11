@@ -8,6 +8,20 @@
 /* 将该子系统里所有模块都装入链表 */
 LIST_HEAD(video_list);
 
+struct VideoOpr *video_get_module(const char *name)
+{
+	struct VideoOpr *pModule;
+
+	list_for_each_entry(pModule, &video_list, list)
+	{
+		if (!strcmp(name, pModule->name))
+			return pModule;
+	}
+
+	printf("no sub module ERROR\n");
+	return NULL;
+}
+
 /* 开放给底层具体模块的注册接口 */
 int video_register(struct list_head *list)
 {
@@ -48,17 +62,24 @@ void ShowVideoOpr(void)
 }
 
 /* 获取摄像头数据格式 */
-void get_camera_format(struct VideoOpr *pModule, int *Width, int *Height, int *format)
+void get_camera_format(const char *name, int *Width, int *Height, int *format)
 {
+	struct VideoOpr *pModule;
+
+	pModule = video_get_module(name);
+
 	*Width = pModule->iWidth;
 	*Height = pModule->iHeight;
 	*format = pModule->iPixelFormat;
 }
 
 /* 开启摄像头 */
-int start_camera(struct VideoOpr *pModule)
+int start_camera(const char *name)
 {
 	int iError;
+	struct VideoOpr *pModule;
+
+	pModule = video_get_module(name);
 
 	iError = pModule->StartDevice(pModule);
 
@@ -66,9 +87,12 @@ int start_camera(struct VideoOpr *pModule)
 }
 
 /* 获取一帧数据 */
-int get_frame(struct VideoOpr *pModule, PT_VideoBuf ptVideoBuf)
+int get_frame(const char *name, PT_VideoBuf ptVideoBuf)
 {
 	int iError;
+	struct VideoOpr *pModule;
+
+	pModule = video_get_module(name);
 
 	iError = pModule->GetFrame(pModule, ptVideoBuf);
 
@@ -76,25 +100,13 @@ int get_frame(struct VideoOpr *pModule, PT_VideoBuf ptVideoBuf)
 }
 
 /* 释放一帧数据 */
-int put_frame(PT_VideoOpr pModule, PT_VideoBuf ptVideoBuf)
+int put_frame(const char *name, PT_VideoBuf ptVideoBuf)
 {
 	int iError;
+	struct VideoOpr *pModule;
 
+	pModule = video_get_module(name);
 	iError = pModule->PutFrame(pModule, ptVideoBuf);
 
 	return iError;
-}
-
-struct VideoOpr *video_get_module(const char *name)
-{
-	struct VideoOpr *pModule;
-
-	list_for_each_entry(pModule, &video_list, list)
-	{
-		if (!strcmp(name, pModule->name))
-			return pModule;
-	}
-
-	printf("no sub module ERROR\n");
-	return NULL;
 }

@@ -64,10 +64,9 @@ int v4l2_init(void);
 int video_init(void);
 void video_modules_init(void);
 void ShowVideoOpr(void);
-void get_camera_format(struct VideoOpr *pModule, int *Width, int *Height, int *format);
-int start_camera(struct VideoOpr *pModule);
-int get_frame(struct VideoOpr *pModule, PT_VideoBuf ptVideoBuf);
-int put_frame(PT_VideoOpr pModule, PT_VideoBuf ptVideoBuf);
-struct VideoOpr *video_get_module(const char *name);
+void get_camera_format(const char *name, int *Width, int *Height, int *format);
+int start_camera(const char *name);
+int get_frame(const char *name, PT_VideoBuf ptVideoBuf);
+int put_frame(const char *name, PT_VideoBuf ptVideoBuf);
 
 #endif
