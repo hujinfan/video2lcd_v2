@@ -5,7 +5,7 @@
 #include <linux/fb.h>
 #include "video_ss.h"
 
-typedef struct DispOpr {
+struct DispOpr {
 	/* variables */
 	char *name;
 	int iXres;
@@ -20,15 +20,15 @@ typedef struct DispOpr {
 	unsigned char *pucFbMem;
 
 	/* functions */
-	int (*DeviceInit)(struct DispOpr *pDispOpr);
-	int (*CleanScreen)(struct DispOpr *pDispOpr, unsigned int dwBackColor);
+	int (*DeviceInit)(struct DispOpr *pModule);
+	int (*CleanScreen)(struct DispOpr *pModule, unsigned int dwBackColor);
 	int (*ShowPage)(void);
 
 	struct fb_var_screeninfo fb_var;
 	struct fb_fix_screeninfo fb_fix;
 
 	struct list_head list;
-}T_DispOpr, *PT_DispOpr;
+};
 
 int display_register(struct list_head *list);
 int fb_init(void);
@@ -36,8 +36,8 @@ int fb_init(void);
 
 /* call for app */
 int display_init(void);
-int GetDispResolution(struct DispOpr *pDispOpr, int *piXres, int *piYres, int *piBpp);
-int GetVideoBufForDisplay(struct DispOpr *pDispOpr, struct VideoBuf *ptFrameBuf);
-struct DispOpr *display_get_module(const char *name);
+int GetDispResolution(const char *name, int *piXres, int *piYres, int *piBpp);
+int GetVideoBufForDisplay(const char *name, struct VideoBuf *ptFrameBuf);
 void display_modules_init(void);
+
 #endif

@@ -69,7 +69,6 @@ int main(int argc, char *argv[])
 	int iPixelFormatOfVideo;
 
 	struct VideoConvert *ptVideoConvert;
-	struct DispOpr *pDispOpr;
 	struct VideoOpr *pVideoOpr;
 	struct VideoBuf	*ptVideoBufCur;
 
@@ -86,8 +85,7 @@ int main(int argc, char *argv[])
 	display_modules_init();
 
 	/* 选取一个默认的显示模块 */
-	pDispOpr = display_get_module(DEFAULT_DISPLAY_MODULE);
-	GetDispResolution(pDispOpr, &iLcdWidth, &iLcdHeight, &iLcdBpp);
+	GetDispResolution(DEFAULT_DISPLAY_MODULE, &iLcdWidth, &iLcdHeight, &iLcdBpp);
 	printf("LCD display format [%d x %d]\n", iLcdWidth, iLcdHeight);
 	lcd_row = iLcdWidth;
 	lcd_col = iLcdHeight;
@@ -103,7 +101,7 @@ int main(int argc, char *argv[])
 		lcd_mem[i] = (unsigned short *)malloc(sizeof(unsigned short) * lcd_col);
 
 	/* 设置framebuffer */
-	GetVideoBufForDisplay(pDispOpr, &tFrameBuf);
+	GetVideoBufForDisplay(DEFAULT_DISPLAY_MODULE, &tFrameBuf);
 	iPixelFormatOfDisp = tFrameBuf.iPixelFormat;
 
 	/* 视频子系统初始化 */

@@ -10,7 +10,16 @@
 
 #include "display_ss.h"
 
-static int FbDeviceInit(struct DispOpr *pDispOpr)
+static int FbDeviceInit(struct DispOpr *pModule);
+static int FbCleanScreen(struct DispOpr *pModule, unsigned int dwBackColor);
+
+static struct DispOpr disp_module = {
+	.name = "fb",
+	.DeviceInit = FbDeviceInit,
+	.CleanScreen = FbCleanScreen,
+};
+
+static int FbDeviceInit(struct DispOpr *pModule)
 {
 	int iError;
 	int iFd;
@@ -23,37 +32,37 @@ static int FbDeviceInit(struct DispOpr *pDispOpr)
 	}
 
 	/* 获取LCD的可变参数和固定参数 */
-	iError = ioctl(iFd, FBIOGET_VSCREENINFO, &pDispOpr->fb_var);
+	iError = ioctl(iFd, FBIOGET_VSCREENINFO, &pModule->fb_var);
 	if (iError < 0)
 	{
 		printf("can't get fb's var\n");
 		return -1;
 	}
 
-	iError = ioctl(iFd, FBIOGET_FSCREENINFO, &pDispOpr->fb_fix);
+	iError = ioctl(iFd, FBIOGET_FSCREENINFO, &pModule->fb_fix);
 	if (iError < 0)
 	{
 		printf("can't get fb's fix\n");
 		return -1;
 	}
 
-	pDispOpr->dwScreenSize = pDispOpr->fb_var.xres * pDispOpr->fb_var.yres * pDispOpr->fb_var.bits_per_pixel / 8;
-	pDispOpr->pucFbMem = (unsigned char *)mmap(NULL, pDispOpr->dwScreenSize, PROT_READ | PROT_WRITE, MAP_SHARED, iFd, 0);
-	if (pDispOpr->pucFbMem < 0)
+	pModule->dwScreenSize = pModule->fb_var.xres * pModule->fb_var.yres * pModule->fb_var.bits_per_pixel / 8;
+	pModule->pucFbMem = (unsigned char *)mmap(NULL, pModule->dwScreenSize, PROT_READ | PROT_WRITE, MAP_SHARED, iFd, 0);
+	if (pModule->pucFbMem < 0)
 	{
 		printf("can't mmap\n");
 		return -1;
 	}
 
-	pDispOpr->iXres = pDispOpr->fb_var.xres;
-	pDispOpr->iYres = pDispOpr->fb_var.yres;
-	pDispOpr->iBpp = pDispOpr->fb_var.bits_per_pixel;
-	pDispOpr->iLineWidth = pDispOpr->fb_var.xres * pDispOpr->iBpp / 8;
+	pModule->iXres = pModule->fb_var.xres;
+	pModule->iYres = pModule->fb_var.yres;
+	pModule->iBpp = pModule->fb_var.bits_per_pixel;
+	pModule->iLineWidth = pModule->fb_var.xres * pModule->iBpp / 8;
 
 	return 0;
 }
 
-static int FbCleanScreen(struct DispOpr *pDispOpr, unsigned int dwBackColor)
+static int FbCleanScreen(struct DispOpr *pModule, unsigned int dwBackColor)
 {
 	unsigned char *pucFb;
 	unsigned short *pwFb16bpp;
@@ -65,14 +74,14 @@ static int FbCleanScreen(struct DispOpr *pDispOpr, unsigned int dwBackColor)
 	int iBlue;
 	int i = 0;
 
-	pucFb = pDispOpr->pucFbMem;
+	pucFb = pModule->pucFbMem;
 	pwFb16bpp = (unsigned short *)pucFb;
 	pdwFb32bpp = (unsigned int *)pucFb;
 
-	switch (pDispOpr->fb_var.bits_per_pixel)
+	switch (pModule->fb_var.bits_per_pixel)
 	{
 		case 8:
-			memset(pDispOpr->pucFbMem, dwBackColor, pDispOpr->dwScreenSize);
+			memset(pModule->pucFbMem, dwBackColor, pModule->dwScreenSize);
 			break;
 		case 16:
 			/*
@@ -85,7 +94,7 @@ static int FbCleanScreen(struct DispOpr *pDispOpr, unsigned int dwBackColor)
 
 			wColor16bpp = (iRed << 11) | (iGreen << 5) | iBlue;
 
-			while (i < pDispOpr->dwScreenSize)
+			while (i < pModule->dwScreenSize)
 			{
 				*pwFb16bpp = wColor16bpp;
 				pwFb16bpp++;
@@ -93,7 +102,7 @@ static int FbCleanScreen(struct DispOpr *pDispOpr, unsigned int dwBackColor)
 			}
 			break;
 		case 32:
-			while (i < pDispOpr->dwScreenSize)
+			while (i < pModule->dwScreenSize)
 			{
 				*pdwFb32bpp = dwBackColor;
 				pdwFb32bpp++;
@@ -101,22 +110,16 @@ static int FbCleanScreen(struct DispOpr *pDispOpr, unsigned int dwBackColor)
 			}
 			break;
 		default:
-			printf("can't support %d bpp\n", pDispOpr->fb_var.bits_per_pixel);
+			printf("can't support %d bpp\n", pModule->fb_var.bits_per_pixel);
 			return -1;
 	}
 
 	return 0;
 }
 
-static T_DispOpr pDispOpr = {
-	.name = "fb",
-	.DeviceInit = FbDeviceInit,
-	.CleanScreen = FbCleanScreen,
-};
-
 int fb_init(void)
 {
 	printf("Display module fb init\n");
 	/* 调用子系统提供的注册接口向子系统注册模块 */
-	return display_register(&pDispOpr.list);
+	return display_register(&disp_module.list);
 }

@@ -27,33 +27,6 @@ int display_init(void)
 	return iError;
 }
 
-int GetDispResolution(struct DispOpr *pDispOpr, int *piXres, int *piYres, int *piBpp)
-{
-	*piXres = pDispOpr->iXres;
-	*piYres = pDispOpr->iYres;
-	*piBpp = pDispOpr->iBpp;
-	return 0;
-}
-
-/* 设置framebuffer */
-int GetVideoBufForDisplay(struct DispOpr *pDispOpr, struct VideoBuf *ptFrameBuf)
-{
-	ptFrameBuf->iPixelFormat = (pDispOpr->iBpp == 16) ? V4L2_PIX_FMT_RGB565 : \
-	(pDispOpr->iBpp == 32) ? V4L2_PIX_FMT_RGB32 : \
-	0;
-
-	ptFrameBuf->tPixelDatas.iWidth = pDispOpr->iXres;
-	ptFrameBuf->tPixelDatas.iHeight = pDispOpr->iYres;
-	ptFrameBuf->tPixelDatas.iBpp = pDispOpr->iBpp;
-	ptFrameBuf->tPixelDatas.iLineBytes = pDispOpr->iLineWidth;
-	ptFrameBuf->tPixelDatas.iTotalBytes = ptFrameBuf->tPixelDatas.iLineBytes * ptFrameBuf->tPixelDatas.iHeight;
-
-	/* 显存地址 */
-	ptFrameBuf->tPixelDatas.aucPixelDatas = pDispOpr->pucFbMem;
-
-	return 0;
-}
-
 struct DispOpr *display_get_module(const char *name)
 {
 	struct DispOpr *pModule;
@@ -66,6 +39,40 @@ struct DispOpr *display_get_module(const char *name)
 
 	printf("no sub module ERROR\n");
 	return NULL;
+}
+
+int GetDispResolution(const char *name, int *piXres, int *piYres, int *piBpp)
+{
+	struct DispOpr *pModule;
+
+	pModule = display_get_module(name);
+	*piXres = pModule->iXres;
+	*piYres = pModule->iYres;
+	*piBpp = pModule->iBpp;
+	return 0;
+}
+
+/* 设置framebuffer */
+int GetVideoBufForDisplay(const char *name, struct VideoBuf *ptFrameBuf)
+{
+	struct DispOpr *pModule;
+
+	pModule = display_get_module(name);
+
+	ptFrameBuf->iPixelFormat = (pModule->iBpp == 16) ? V4L2_PIX_FMT_RGB565 : \
+	(pModule->iBpp == 32) ? V4L2_PIX_FMT_RGB32 : \
+	0;
+
+	ptFrameBuf->tPixelDatas.iWidth = pModule->iXres;
+	ptFrameBuf->tPixelDatas.iHeight = pModule->iYres;
+	ptFrameBuf->tPixelDatas.iBpp = pModule->iBpp;
+	ptFrameBuf->tPixelDatas.iLineBytes = pModule->iLineWidth;
+	ptFrameBuf->tPixelDatas.iTotalBytes = ptFrameBuf->tPixelDatas.iLineBytes * ptFrameBuf->tPixelDatas.iHeight;
+
+	/* 显存地址 */
+	ptFrameBuf->tPixelDatas.aucPixelDatas = pModule->pucFbMem;
+
+	return 0;
 }
 
 /* 调用各个子模块的初始化函数 */
