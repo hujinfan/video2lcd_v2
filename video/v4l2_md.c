@@ -267,6 +267,7 @@ static int V4l2PutFrameForStreaming(PT_VideoOpr pVideoOpr, PT_VideoBuf ptVideoBu
 static struct VideoOpr bModule = {
 	.name = "v4l2",
 	.device_name = "/dev/video0",
+	.use_as_default = 0, /* 初始不使能 */
 	.DeviceInit = V4l2DeviceInit,
 	.StartDevice = V4l2StartDevice,
 	.GetFrame = V4l2GetFrameForStreaming,

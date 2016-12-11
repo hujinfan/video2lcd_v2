@@ -29,6 +29,8 @@ struct VideoOpr {
 
 	char *name;/* 具体模块的名字 */
 	char *device_name;
+	int use_as_default;
+
 	int (*DeviceInit)(struct VideoOpr *pVideoOpr);
 	int (*ExitDevice)();
 	int (*GetFrame)(PT_VideoOpr pVideoOpr, PT_VideoBuf ptVideoBuf);
@@ -64,9 +66,10 @@ int v4l2_init(void);
 int video_init(void);
 void video_modules_init(void);
 void ShowVideoOpr(void);
-void get_camera_format(const char *name, int *Width, int *Height, int *format);
-int start_camera(const char *name);
-int get_frame(const char *name, PT_VideoBuf ptVideoBuf);
-int put_frame(const char *name, PT_VideoBuf ptVideoBuf);
+void get_camera_format(int *Width, int *Height, int *format);
+int start_camera(void);
+int get_frame(PT_VideoBuf ptVideoBuf);
+int put_frame(PT_VideoBuf ptVideoBuf);
+void choose_default_video_module(const char *name);
 
 #endif

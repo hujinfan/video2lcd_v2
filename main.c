@@ -84,7 +84,9 @@ int main(int argc, char *argv[])
 	display_modules_init();
 
 	/* 选取一个默认的显示模块 */
-	GetDispResolution(DEFAULT_DISPLAY_MODULE, &iLcdWidth, &iLcdHeight, &iLcdBpp);
+	choose_default_display_module(DEFAULT_DISPLAY_MODULE);
+
+	GetDispResolution(&iLcdWidth, &iLcdHeight, &iLcdBpp);
 	printf("LCD display format [%d x %d]\n", iLcdWidth, iLcdHeight);
 	lcd_row = iLcdWidth;
 	lcd_col = iLcdHeight;
@@ -100,7 +102,7 @@ int main(int argc, char *argv[])
 		lcd_mem[i] = (unsigned short *)malloc(sizeof(unsigned short) * lcd_col);
 
 	/* 设置framebuffer */
-	GetVideoBufForDisplay(DEFAULT_DISPLAY_MODULE, &tFrameBuf);
+	GetVideoBufForDisplay(&tFrameBuf);
 	iPixelFormatOfDisp = tFrameBuf.iPixelFormat;
 
 	/* 视频子系统初始化 */
@@ -109,7 +111,10 @@ int main(int argc, char *argv[])
 	/* 初始化视频模块 */
 	video_modules_init();
 
-	get_camera_format(DEFAULT_VIDEO_MODULE, &cam_row, &cam_col, &iPixelFormatOfVideo);
+	/* 选择一个默认视频模块 */
+	choose_default_video_module(DEFAULT_VIDEO_MODULE);
+
+	get_camera_format(&cam_row, &cam_col, &iPixelFormatOfVideo);
 	printf("CAMERA data format [%d x %d]\n", cam_row, cam_col);
 
 	/* 动态分配二维数组 */
@@ -140,7 +145,7 @@ int main(int argc, char *argv[])
 	ShowVideoConvertInfo(ptVideoConvert);
 
 	/* 启动摄像头 */
-	iError = start_camera(DEFAULT_VIDEO_MODULE);
+	iError = start_camera();
 	if (iError)
 	{
 		printf("StartDevice %s error!!\n", argv[1]);
@@ -163,7 +168,7 @@ int main(int argc, char *argv[])
 	while (1)
 	{
 		/* 1. 读摄像头数据 */
-		iError = get_frame(DEFAULT_VIDEO_MODULE, &tVideoBuf);
+		iError = get_frame(&tVideoBuf);
 		if (iError)
 		{
 			printf("####get frame ERROR####\n");
@@ -208,7 +213,7 @@ int main(int argc, char *argv[])
 				*d++ = lcd_mem[j][i];
 
 		/* 释放该帧数据,重新放入采集视频的队列 */
-		iError = put_frame(DEFAULT_VIDEO_MODULE, &tVideoBuf);
+		iError = put_frame(&tVideoBuf);
 		if (iError)
 		{
 			printf("Put frame error\n");

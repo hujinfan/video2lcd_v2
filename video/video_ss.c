@@ -61,12 +61,26 @@ void ShowVideoOpr(void)
 		printf("registered video opr %s\n", pModule->name);
 }
 
-/* 获取摄像头数据格式 */
-void get_camera_format(const char *name, int *Width, int *Height, int *format)
+static struct VideoOpr *get_default_module(void)
 {
 	struct VideoOpr *pModule;
 
-	pModule = video_get_module(name);
+	list_for_each_entry(pModule, &video_list, list)
+	{
+		if (pModule->use_as_default)
+			return pModule;
+	}
+
+	printf("no sub module ERROR\n");
+	return NULL;
+}
+
+/* 获取摄像头数据格式 */
+void get_camera_format(int *Width, int *Height, int *format)
+{
+	struct VideoOpr *pModule;
+
+	pModule = get_default_module();
 
 	*Width = pModule->iWidth;
 	*Height = pModule->iHeight;
@@ -74,12 +88,12 @@ void get_camera_format(const char *name, int *Width, int *Height, int *format)
 }
 
 /* 开启摄像头 */
-int start_camera(const char *name)
+int start_camera(void)
 {
 	int iError;
 	struct VideoOpr *pModule;
 
-	pModule = video_get_module(name);
+	pModule = get_default_module();
 
 	iError = pModule->StartDevice(pModule);
 
@@ -87,12 +101,12 @@ int start_camera(const char *name)
 }
 
 /* 获取一帧数据 */
-int get_frame(const char *name, PT_VideoBuf ptVideoBuf)
+int get_frame(PT_VideoBuf ptVideoBuf)
 {
 	int iError;
 	struct VideoOpr *pModule;
 
-	pModule = video_get_module(name);
+	pModule = get_default_module();
 
 	iError = pModule->GetFrame(pModule, ptVideoBuf);
 
@@ -100,13 +114,22 @@ int get_frame(const char *name, PT_VideoBuf ptVideoBuf)
 }
 
 /* 释放一帧数据 */
-int put_frame(const char *name, PT_VideoBuf ptVideoBuf)
+int put_frame(PT_VideoBuf ptVideoBuf)
 {
 	int iError;
 	struct VideoOpr *pModule;
 
-	pModule = video_get_module(name);
+	pModule = get_default_module();
 	iError = pModule->PutFrame(pModule, ptVideoBuf);
 
 	return iError;
+}
+
+void choose_default_video_module(const char *name)
+{
+	struct VideoOpr *pModule;
+
+	list_for_each_entry(pModule, &video_list, list)
+		if (!strcmp(name, pModule->name))
+			pModule->use_as_default = 1;
 }

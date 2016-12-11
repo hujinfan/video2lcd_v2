@@ -15,6 +15,7 @@ static int FbCleanScreen(struct DispOpr *pModule, unsigned int dwBackColor);
 
 static struct DispOpr disp_module = {
 	.name = "fb",
+	.use_as_default = 0,
 	.DeviceInit = FbDeviceInit,
 	.CleanScreen = FbCleanScreen,
 };

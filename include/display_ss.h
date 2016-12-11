@@ -12,6 +12,7 @@ struct DispOpr {
 	int iYres;
 	int iBpp;
 	int iLineWidth;
+	int use_as_default;
 
 	/* 显示屏大小*/
 	unsigned int dwScreenSize;
@@ -36,8 +37,9 @@ int fb_init(void);
 
 /* call for app */
 int display_init(void);
-int GetDispResolution(const char *name, int *piXres, int *piYres, int *piBpp);
-int GetVideoBufForDisplay(const char *name, struct VideoBuf *ptFrameBuf);
+int GetDispResolution(int *piXres, int *piYres, int *piBpp);
+int GetVideoBufForDisplay(struct VideoBuf *ptFrameBuf);
 void display_modules_init(void);
+void choose_default_display_module(const char *name);
 
 #endif
