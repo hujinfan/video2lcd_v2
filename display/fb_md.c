@@ -5,19 +5,10 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-#include <linux/fb.h>
 #include <string.h>
 #include <fcntl.h>
 
 #include "display_ss.h"
-
-static struct fb_var_screeninfo g_tFbVar;
-static struct fb_fix_screeninfo g_tFbFix;
-static unsigned int g_dwScreenSize;//屏幕尺寸
-static unsigned char *g_pucFbMem;//framebuffer
-
-static unsigned int g_dwLineWidth;
-static unsigned int g_dwPixelWidth;
 
 static int FbDeviceInit(struct DispOpr *pDispOpr)
 {
@@ -32,43 +23,37 @@ static int FbDeviceInit(struct DispOpr *pDispOpr)
 	}
 
 	/* 获取LCD的可变参数和固定参数 */
-	iError = ioctl(iFd, FBIOGET_VSCREENINFO, &g_tFbVar);
+	iError = ioctl(iFd, FBIOGET_VSCREENINFO, &pDispOpr->fb_var);
 	if (iError < 0)
 	{
 		printf("can't get fb's var\n");
 		return -1;
 	}
 
-	iError = ioctl(iFd, FBIOGET_FSCREENINFO, &g_tFbFix);
+	iError = ioctl(iFd, FBIOGET_FSCREENINFO, &pDispOpr->fb_fix);
 	if (iError < 0)
 	{
 		printf("can't get fb's fix\n");
 		return -1;
 	}
 
-	g_dwScreenSize = g_tFbVar.xres * g_tFbVar.yres * g_tFbVar.bits_per_pixel / 8;
-	g_pucFbMem = (unsigned char *)mmap(NULL, g_dwScreenSize, PROT_READ | PROT_WRITE, MAP_SHARED, iFd, 0);
-	if (g_pucFbMem < 0)
+	pDispOpr->dwScreenSize = pDispOpr->fb_var.xres * pDispOpr->fb_var.yres * pDispOpr->fb_var.bits_per_pixel / 8;
+	pDispOpr->pucFbMem = (unsigned char *)mmap(NULL, pDispOpr->dwScreenSize, PROT_READ | PROT_WRITE, MAP_SHARED, iFd, 0);
+	if (pDispOpr->pucFbMem < 0)
 	{
 		printf("can't mmap\n");
 		return -1;
 	}
 
-	pDispOpr->iXres = g_tFbVar.xres;
-	pDispOpr->iYres = g_tFbVar.yres;
-	pDispOpr->iBpp = g_tFbVar.bits_per_pixel;
-	pDispOpr->iLineWidth = g_tFbVar.xres * pDispOpr->iBpp / 8;
-
-	/* 显存指向framebuffer */
-	pDispOpr->pucDispMem = g_pucFbMem;
-
-	g_dwLineWidth = g_tFbVar.xres * g_tFbVar.bits_per_pixel / 8;
-	g_dwPixelWidth = g_tFbVar.bits_per_pixel / 8;
+	pDispOpr->iXres = pDispOpr->fb_var.xres;
+	pDispOpr->iYres = pDispOpr->fb_var.yres;
+	pDispOpr->iBpp = pDispOpr->fb_var.bits_per_pixel;
+	pDispOpr->iLineWidth = pDispOpr->fb_var.xres * pDispOpr->iBpp / 8;
 
 	return 0;
 }
 
-static int FbCleanScreen(unsigned int dwBackColor)
+static int FbCleanScreen(struct DispOpr *pDispOpr, unsigned int dwBackColor)
 {
 	unsigned char *pucFb;
 	unsigned short *pwFb16bpp;
@@ -80,14 +65,14 @@ static int FbCleanScreen(unsigned int dwBackColor)
 	int iBlue;
 	int i = 0;
 
-	pucFb = g_pucFbMem;
+	pucFb = pDispOpr->pucFbMem;
 	pwFb16bpp = (unsigned short *)pucFb;
 	pdwFb32bpp = (unsigned int *)pucFb;
 
-	switch (g_tFbVar.bits_per_pixel)
+	switch (pDispOpr->fb_var.bits_per_pixel)
 	{
 		case 8:
-			memset(g_pucFbMem, dwBackColor, g_dwScreenSize);
+			memset(pDispOpr->pucFbMem, dwBackColor, pDispOpr->dwScreenSize);
 			break;
 		case 16:
 			/*
@@ -100,7 +85,7 @@ static int FbCleanScreen(unsigned int dwBackColor)
 
 			wColor16bpp = (iRed << 11) | (iGreen << 5) | iBlue;
 
-			while (i < g_dwScreenSize)
+			while (i < pDispOpr->dwScreenSize)
 			{
 				*pwFb16bpp = wColor16bpp;
 				pwFb16bpp++;
@@ -108,7 +93,7 @@ static int FbCleanScreen(unsigned int dwBackColor)
 			}
 			break;
 		case 32:
-			while (i < g_dwScreenSize)
+			while (i < pDispOpr->dwScreenSize)
 			{
 				*pdwFb32bpp = dwBackColor;
 				pdwFb32bpp++;
@@ -116,7 +101,7 @@ static int FbCleanScreen(unsigned int dwBackColor)
 			}
 			break;
 		default:
-			printf("can't support %d bpp\n", g_tFbVar.bits_per_pixel);
+			printf("can't support %d bpp\n", pDispOpr->fb_var.bits_per_pixel);
 			return -1;
 	}
 

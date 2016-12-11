@@ -34,7 +34,7 @@ void display_modules_init(void)
 			pModule->DeviceInit(pModule);
 
 		if (pModule->CleanScreen)
-			pModule->CleanScreen(0);
+			pModule->CleanScreen(pModule, 0);
 	}
 }
 
@@ -73,7 +73,7 @@ int GetVideoBufForDisplay(struct DispOpr *pDispOpr, struct VideoBuf *ptFrameBuf)
 	ptFrameBuf->tPixelDatas.iBpp = pDispOpr->iBpp;
 	ptFrameBuf->tPixelDatas.iLineBytes = pDispOpr->iLineWidth;
 	ptFrameBuf->tPixelDatas.iTotalBytes = ptFrameBuf->tPixelDatas.iLineBytes * ptFrameBuf->tPixelDatas.iHeight;
-	ptFrameBuf->tPixelDatas.aucPixelDatas = pDispOpr->pucDispMem;
+	ptFrameBuf->tPixelDatas.aucPixelDatas = pDispOpr->pucFbMem;
 
 	return 0;
 }
