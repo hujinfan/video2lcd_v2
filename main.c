@@ -6,6 +6,7 @@
 #include "display_ss.h"
 #include "convert_ss.h"
 #include "video_ss.h"
+#include "compile_time.h"
 
 #define DEFAULT_DISPLAY_MODULE "fb"
 #define DEFAULT_VIDEO_MODULE "v4l2"
@@ -77,7 +78,7 @@ int main(int argc, char *argv[])
 	struct VideoBuf tZoomBuf;//缩放后的数据
 	struct VideoBuf tFrameBuf;//最终刷入framebuf的数据
 
-	printf("Video2Lcd version 2.0\n");
+	printf("Video2Lcd version 2.1 Time: %s\n", COMPILE_DATE);
 	/* 显示子系统初始化 */
 	display_init();
 

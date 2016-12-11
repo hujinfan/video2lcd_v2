@@ -26,18 +26,20 @@ obj-y += video/
 obj-y += convert/
 
 all :
+	echo "/* This file is auto generate */" > include/compile_time.h
+	echo "#define COMPILE_DATE \"$(shell date +%Y-%m-%d\ %H:%M)\" " >> include/compile_time.h
 	make -C ./ -f $(TOPDIR)/Makefile.build
 	$(CC) $(LDFLAGS) -o $(TARGET) built-in.o
 	ctags -R
 
 clean:
 	rm -f $(shell find -name "*.o")
-	rm -f $(TARGET) tags
+	rm -f $(TARGET) tags include/compile_time.h
 
 distclean:
 	rm -f $(shell find -name "*.o")
 	rm -f $(shell find -name "*.d")
-	rm -f $(TARGET) tags
+	rm -f $(TARGET) tags include/compile_time.h
 
 export CFLAGS LDFLAGS
 export TOPDIR
