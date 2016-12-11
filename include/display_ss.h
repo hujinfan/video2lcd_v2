@@ -3,6 +3,7 @@
 
 #include "klist.h"
 #include <linux/fb.h>
+#include "video_ss.h"
 
 typedef struct DispOpr {
 	/* variables */
@@ -11,7 +12,11 @@ typedef struct DispOpr {
 	int iYres;
 	int iBpp;
 	int iLineWidth;
+
+	/* 显示屏大小*/
 	unsigned int dwScreenSize;
+
+	/* 显存地址 */
 	unsigned char *pucFbMem;
 
 	/* functions */
@@ -25,4 +30,14 @@ typedef struct DispOpr {
 	struct list_head list;
 }T_DispOpr, *PT_DispOpr;
 
+int display_register(struct list_head *list);
+int fb_init(void);
+
+
+/* call for app */
+int display_init(void);
+int GetDispResolution(struct DispOpr *pDispOpr, int *piXres, int *piYres, int *piBpp);
+int GetVideoBufForDisplay(struct DispOpr *pDispOpr, struct VideoBuf *ptFrameBuf);
+struct DispOpr *display_get_module(const char *name);
+void display_modules_init(void);
 #endif

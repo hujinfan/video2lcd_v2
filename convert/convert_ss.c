@@ -8,6 +8,13 @@
 /* 将该子系统里所有模块都装入链表 */
 LIST_HEAD(convert_list);
 
+/* 开放给底层具体模块的注册接口 */
+int convert_register(struct list_head *list)
+{
+	list_add(list, &convert_list);
+	return 0;
+}
+
 struct VideoConvert *convert_get_module(const char *name)
 {
 	struct VideoConvert *pModule;
@@ -19,13 +26,6 @@ struct VideoConvert *convert_get_module(const char *name)
 	}
 
 	return NULL;
-}
-
-/* 开放给底层具体模块的注册接口 */
-int convert_register(struct list_head *list)
-{
-	list_add(list, &convert_list);
-	return 0;
 }
 
 /* 开放给应用层调用 */

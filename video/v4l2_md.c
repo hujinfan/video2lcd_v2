@@ -2,7 +2,6 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -29,7 +28,7 @@ static int isSupportThisFormat(int iPixelFormat)
 	return 0;
 }
 
-static int V4l2DeviceInit(struct VideoOpr *pVideoOpr, struct VideoDevice *ptVideoDevice)
+static int V4l2DeviceInit(struct VideoOpr *pVideoOpr)
 {
 	int i;
 	int iFd;
@@ -47,7 +46,7 @@ static int V4l2DeviceInit(struct VideoOpr *pVideoOpr, struct VideoDevice *ptVide
 		printf("open %s ERROR\n", pVideoOpr->name);
 		return -1;
 	}
-	ptVideoDevice->iFd = iFd;
+	pVideoOpr->iFd = iFd;
 
 	/* 查询属性 */
 	memset(&tV4l2Cap, 0, sizeof(struct v4l2_capability));
@@ -79,14 +78,14 @@ static int V4l2DeviceInit(struct VideoOpr *pVideoOpr, struct VideoDevice *ptVide
 	{
 		if (isSupportThisFormat(tFmtDesc.pixelformat))
 		{
-			ptVideoDevice->iPixelFormat = tFmtDesc.pixelformat;
+			pVideoOpr->iPixelFormat = tFmtDesc.pixelformat;
 			break;
 		}
 		tFmtDesc.index++;
 	}
 
 	/* 设备的格式不在该驱动支持的范围内 */
-	if (!ptVideoDevice->iPixelFormat)
+	if (!pVideoOpr->iPixelFormat)
 	{
 		printf("format is not support\n");
 		goto err_exit;
@@ -96,7 +95,7 @@ static int V4l2DeviceInit(struct VideoOpr *pVideoOpr, struct VideoDevice *ptVide
 	/* 1. 构造要设置的格式结构体数据 */
 	memset(&tV4l2Fmt, 0, sizeof(struct v4l2_format));
 	tV4l2Fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	tV4l2Fmt.fmt.pix.pixelformat = ptVideoDevice->iPixelFormat;
+	tV4l2Fmt.fmt.pix.pixelformat = pVideoOpr->iPixelFormat;
 	tV4l2Fmt.fmt.pix.width = 320;
 	tV4l2Fmt.fmt.pix.height = 240;
 	tV4l2Fmt.fmt.pix.field = V4L2_FIELD_ANY;
@@ -108,8 +107,8 @@ static int V4l2DeviceInit(struct VideoOpr *pVideoOpr, struct VideoDevice *ptVide
 		printf("set format error\n");
 		goto err_exit;
 	}
-	ptVideoDevice->iWidth = tV4l2Fmt.fmt.pix.width;
-	ptVideoDevice->iHeight = tV4l2Fmt.fmt.pix.height;
+	pVideoOpr->iWidth = tV4l2Fmt.fmt.pix.width;
+	pVideoOpr->iHeight = tV4l2Fmt.fmt.pix.height;
 
 	/* 请求缓冲区 */
 	/* 1. 构造请求数据结构 */
@@ -126,7 +125,7 @@ static int V4l2DeviceInit(struct VideoOpr *pVideoOpr, struct VideoDevice *ptVide
 		goto err_exit;
 	}
 
-	ptVideoDevice->iVideoBufCnt = tV4l2ReqBuffs.count;
+	pVideoOpr->iVideoBufCnt = tV4l2ReqBuffs.count;
 
 	/* 查询请求的缓冲区是否请求成功,成功就放入队列 */
 	/* 分别处理STREAMING接口和ReadWrite接口 */
@@ -136,7 +135,7 @@ static int V4l2DeviceInit(struct VideoOpr *pVideoOpr, struct VideoDevice *ptVide
 		 * Query buffer
 		 * streaming接口用mmap映射
 		 */
-		for (i = 0; i < ptVideoDevice->iVideoBufCnt; i++)
+		for (i = 0; i < pVideoOpr->iVideoBufCnt; i++)
 		{
 			memset(&tV4l2Buf, 0, sizeof(struct v4l2_buffer));
 			tV4l2Buf.index = i;
@@ -149,9 +148,9 @@ static int V4l2DeviceInit(struct VideoOpr *pVideoOpr, struct VideoDevice *ptVide
 			}
 
 			/* 把底层分配的数据缓冲区映射给应用层用 */
-			ptVideoDevice->iVideoBufMaxLen = tV4l2Buf.length;
-			ptVideoDevice->pucVideoBuf[i] = mmap(0, tV4l2Buf.length, PROT_READ, MAP_SHARED, iFd, tV4l2Buf.m.offset);
-			if (ptVideoDevice->pucVideoBuf[i] == MAP_FAILED)
+			pVideoOpr->iVideoBufMaxLen = tV4l2Buf.length;
+			pVideoOpr->pucVideoBuf[i] = mmap(0, tV4l2Buf.length, PROT_READ, MAP_SHARED, iFd, tV4l2Buf.m.offset);
+			if (pVideoOpr->pucVideoBuf[i] == MAP_FAILED)
 			{
 				printf("Map failed\n");
 				goto err_exit;
@@ -159,7 +158,7 @@ static int V4l2DeviceInit(struct VideoOpr *pVideoOpr, struct VideoDevice *ptVide
 		}
 
 		/* Queue 放入队列 */
-		for (i = 0; i < ptVideoDevice->iVideoBufCnt; i++)
+		for (i = 0; i < pVideoOpr->iVideoBufCnt; i++)
 		{
 			memset(&tV4l2Buf, 0, sizeof(struct v4l2_buffer));
 			tV4l2Buf.index = i;
@@ -177,8 +176,6 @@ static int V4l2DeviceInit(struct VideoOpr *pVideoOpr, struct VideoDevice *ptVide
 	{
 	}
 
-	ptVideoDevice->ptVideoOpr = pVideoOpr;
-
 	return 0;
 err_exit:
 	close(iFd);
@@ -186,12 +183,12 @@ err_exit:
 	return -1;
 }
 
-static int V4l2StartDevice(PT_VideoDevice ptVideoDevice)
+static int V4l2StartDevice(PT_VideoOpr pVideoOpr)
 {
 	int iType = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	int iError;
 
-	iError = ioctl(ptVideoDevice->iFd, VIDIOC_STREAMON, &iType);
+	iError = ioctl(pVideoOpr->iFd, VIDIOC_STREAMON, &iType);
 	if (iError)
 	{
 		printf("ERROR, %s, %d\n", __FUNCTION__, __LINE__);
@@ -201,19 +198,16 @@ static int V4l2StartDevice(PT_VideoDevice ptVideoDevice)
 }
 
 /* 获取一帧数据 */
-static int V4l2GetFrameForStreaming(PT_VideoDevice ptVideoDevice, PT_VideoBuf ptVideoBuf)
+static int V4l2GetFrameForStreaming(PT_VideoOpr pVideoOpr, PT_VideoBuf ptVideoBuf)
 {
 	struct pollfd tFds[1];
 	int iRet;
 	struct v4l2_buffer tV4l2Buf;
 
 	/* 等待数据 */
-	tFds[0].fd = ptVideoDevice->iFd;
+	tFds[0].fd = pVideoOpr->iFd;
 	tFds[0].events = POLLIN;
 
-
-#if 0
-#endif
 	iRet = poll(tFds, 1, -1);
 	if (iRet <= 0)
 	{
@@ -225,45 +219,45 @@ static int V4l2GetFrameForStreaming(PT_VideoDevice ptVideoDevice, PT_VideoBuf pt
 	tV4l2Buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	tV4l2Buf.memory = V4L2_MEMORY_MMAP;
 
-	iRet = ioctl(ptVideoDevice->iFd, VIDIOC_DQBUF, &tV4l2Buf);
+	iRet = ioctl(pVideoOpr->iFd, VIDIOC_DQBUF, &tV4l2Buf);
 	if (iRet < 0)
 	{
 		return -1;
 	}
 
 	/* 标识当前哪个缓冲区有视频数据 */
-	ptVideoDevice->iVideoBufCurIndex = tV4l2Buf.index;
+	pVideoOpr->iVideoBufCurIndex = tV4l2Buf.index;
 
 	/*
 	 * 下面这里写的感觉有点怪异
-	 * 没有用tV4l2Buf,用的是ptVideoDevice
+	 * 没有用tV4l2Buf,用的是pVideoOpr
 	 */
-	ptVideoBuf->iPixelFormat = ptVideoDevice->iPixelFormat;
-	ptVideoBuf->tPixelDatas.iWidth = ptVideoDevice->iWidth;
-	ptVideoBuf->tPixelDatas.iHeight = ptVideoDevice->iHeight;
-	ptVideoBuf->tPixelDatas.iBpp = (ptVideoDevice->iPixelFormat == V4L2_PIX_FMT_YUYV) ? 16 :\
-	(ptVideoDevice->iPixelFormat == V4L2_PIX_FMT_MJPEG) ? 0 :\
-	(ptVideoDevice->iPixelFormat == V4L2_PIX_FMT_RGB565) ? 16 : 0;
+	ptVideoBuf->iPixelFormat = pVideoOpr->iPixelFormat;
+	ptVideoBuf->tPixelDatas.iWidth = pVideoOpr->iWidth;
+	ptVideoBuf->tPixelDatas.iHeight = pVideoOpr->iHeight;
+	ptVideoBuf->tPixelDatas.iBpp = (pVideoOpr->iPixelFormat == V4L2_PIX_FMT_YUYV) ? 16 :\
+	(pVideoOpr->iPixelFormat == V4L2_PIX_FMT_MJPEG) ? 0 :\
+	(pVideoOpr->iPixelFormat == V4L2_PIX_FMT_RGB565) ? 16 : 0;
 
-	ptVideoBuf->tPixelDatas.iLineBytes = ptVideoDevice->iWidth * ptVideoBuf->tPixelDatas.iBpp / 8;
+	ptVideoBuf->tPixelDatas.iLineBytes = pVideoOpr->iWidth * ptVideoBuf->tPixelDatas.iBpp / 8;
 	ptVideoBuf->tPixelDatas.iTotalBytes = tV4l2Buf.bytesused;
-	ptVideoBuf->tPixelDatas.aucPixelDatas = ptVideoDevice->pucVideoBuf[tV4l2Buf.index];
+	ptVideoBuf->tPixelDatas.aucPixelDatas = pVideoOpr->pucVideoBuf[tV4l2Buf.index];
 
 	return 0;
 }
 
-static int V4l2PutFrameForStreaming(PT_VideoDevice ptVideoDevice, PT_VideoBuf ptVideoBuf)
+static int V4l2PutFrameForStreaming(PT_VideoOpr pVideoOpr, PT_VideoBuf ptVideoBuf)
 {
 	/* VIDIOC_QBUF */
 	struct v4l2_buffer tV4l2Buf;
 	int iError;
 
 	memset(&tV4l2Buf, 0, sizeof(struct v4l2_buffer));
-	tV4l2Buf.index = ptVideoDevice->iVideoBufCurIndex;
+	tV4l2Buf.index = pVideoOpr->iVideoBufCurIndex;
 	tV4l2Buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	tV4l2Buf.memory = V4L2_MEMORY_MMAP;
 
-	iError = ioctl(ptVideoDevice->iFd, VIDIOC_QBUF, &tV4l2Buf);
+	iError = ioctl(pVideoOpr->iFd, VIDIOC_QBUF, &tV4l2Buf);
 	if (iError)
 	{
 		return 0;

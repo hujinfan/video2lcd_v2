@@ -3,12 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "display_ss.h"
+#include "convert_ss.h"
 #include "video_ss.h"
-
-extern struct DispOpr *display_get_module(const char *name);
-extern struct VideoOpr *video_get_module(const char *name);
-extern struct VideoConvert *GetVideoConvertForFormats(int iPixelFormatIn, int iPixelFormatOut);
-extern int video_convert2rgb(struct VideoConvert *pModule, struct VideoBuf *ptVideoBufIn, struct VideoBuf *ptVideoBufOut);
 
 #define DEFAULT_DISPLAY_MODULE "fb"
 #define DEFAULT_VIDEO_MODULE "v4l2"
@@ -70,7 +67,6 @@ int main(int argc, char *argv[])
 	int iPixelFormatOfDisp;
 	int iPixelFormatOfVideo;
 
-	struct VideoDevice tVideoDevice;
 	struct VideoConvert *ptVideoConvert;
 	struct DispOpr *pDispOpr;
 	struct VideoOpr *pVideoOpr;
@@ -81,6 +77,7 @@ int main(int argc, char *argv[])
 	struct VideoBuf tZoomBuf;//缩放后的数据
 	struct VideoBuf tFrameBuf;//最终刷入framebuf的数据
 
+	printf("Video2Lcd version 2.0\n");
 	/* 显示子系统初始化 */
 	display_init();
 
@@ -111,14 +108,14 @@ int main(int argc, char *argv[])
 	/* 视频子系统初始化 */
 	video_init();
 
-	/* 选取一个视频模块并初始化 */
+	/* 初始化视频模块 */
+	video_modules_init();
+
 	pVideoOpr = video_get_module(DEFAULT_VIDEO_MODULE);
-	video_modules_init(pVideoOpr, &tVideoDevice);
-	printf("CAMERA data format [%d x %d]\n", tVideoDevice.iWidth, tVideoDevice.iHeight);
+	get_camera_format(pVideoOpr, &cam_row, &cam_col, &iPixelFormatOfVideo);
+	printf("CAMERA data format [%d x %d]\n", cam_row, cam_col);
 
 	/* 动态分配二维数组 */
-	cam_row = tVideoDevice.iWidth;
-	cam_col = tVideoDevice.iHeight;
 	cam_mem = (unsigned short **)malloc(sizeof(unsigned short *) * cam_row);
 	if (NULL == cam_mem)
 	{
@@ -128,8 +125,7 @@ int main(int argc, char *argv[])
 	for (i = 0; i < cam_row; i++)
 		cam_mem[i] = (unsigned short *)malloc(sizeof(unsigned short) * cam_col);
 
-	iPixelFormatOfVideo = tVideoDevice.iPixelFormat;
-
+	/* 显示所有video模块 */
 	ShowVideoOpr();
 
 	/* 视频转换子系统初始化 */
@@ -137,7 +133,7 @@ int main(int argc, char *argv[])
 	ShowVideoConvert();
 
 	/* 根据采集到的视频数据格式选取一个合适的转换函数 */
-	ptVideoConvert = GetVideoConvertForFormats(tVideoDevice.iPixelFormat, iPixelFormatOfDisp);
+	ptVideoConvert = GetVideoConvertForFormats(iPixelFormatOfVideo, iPixelFormatOfDisp);
 	if (NULL == ptVideoConvert)
 	{
 		printf("can not support this format convert\n");
@@ -147,7 +143,7 @@ int main(int argc, char *argv[])
 	ShowVideoConvertInfo(ptVideoConvert);
 
 	/* 启动摄像头 */
-	iError = tVideoDevice.ptVideoOpr->StartDevice(&tVideoDevice);
+	iError = start_camera(pVideoOpr);
 	if (iError)
 	{
 		printf("StartDevice %s error!!\n", argv[1]);
@@ -170,7 +166,7 @@ int main(int argc, char *argv[])
 	while (1)
 	{
 		/* 1. 读摄像头数据 */
-		iError = tVideoDevice.ptVideoOpr->GetFrame(&tVideoDevice, &tVideoBuf);
+		iError = get_frame(pVideoOpr, &tVideoBuf);
 		if (iError)
 		{
 			printf("####get frame ERROR####\n");
@@ -215,7 +211,7 @@ int main(int argc, char *argv[])
 				*d++ = lcd_mem[j][i];
 
 		/* 释放该帧数据,重新放入采集视频的队列 */
-		iError = tVideoDevice.ptVideoOpr->PutFrame(&tVideoDevice, &tVideoBuf);
+		iError = put_frame(pVideoOpr, &tVideoBuf);
 		if (iError)
 		{
 			printf("Put frame error\n");

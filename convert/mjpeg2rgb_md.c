@@ -7,6 +7,8 @@
 #include "convert_ss.h"
 #include "jpeglib.h"
 
+extern void jpeg_mem_src_tj(j_decompress_ptr, unsigned char *, unsigned long);
+
 typedef struct MyErrorMgr
 {
 	struct jpeg_error_mgr pub;
@@ -92,15 +94,12 @@ static int CovertOneLine(int iWidth, int iSrcBpp, int iDstBpp, unsigned char *pu
 static int Mjpeg2RgbConvert(PT_VideoBuf ptVideoBufIn, PT_VideoBuf ptVideoBufOut)
 {
 	struct jpeg_decompress_struct tDInfo;
-	//struct jpeg_error_mgr tJErr;
 	int iRet;
 	int iRowStride;
 	unsigned char *aucLineBuffer = NULL;
 	unsigned char *pucDest;
 	T_MyErrorMgr tJerr;
 	PT_PixelDatas ptPixelDatas = &ptVideoBufOut->tPixelDatas;
-
-	//tDInfo.err = jpeg_std_error(&tJErr);
 
 	tDInfo.err               = jpeg_std_error(&tJerr.pub);
 	tJerr.pub.error_exit     = MyErrorExit;
@@ -121,7 +120,6 @@ static int Mjpeg2RgbConvert(PT_VideoBuf ptVideoBufIn, PT_VideoBuf ptVideoBufOut)
 
 	jpeg_create_decompress(&tDInfo);
 
-	//jpeg_stdio_src(&tDInfo, ptFileMap->tFp);
 	jpeg_mem_src_tj (&tDInfo, ptVideoBufIn->tPixelDatas.aucPixelDatas, ptVideoBufIn->tPixelDatas.iTotalBytes);
 
 	iRet = jpeg_read_header(&tDInfo, TRUE);
@@ -140,7 +138,6 @@ static int Mjpeg2RgbConvert(PT_VideoBuf ptVideoBufIn, PT_VideoBuf ptVideoBufOut)
 
 	ptPixelDatas->iWidth  = tDInfo.output_width;
 	ptPixelDatas->iHeight = tDInfo.output_height;
-	//ptPixelDatas->iBpp    = iBpp;
 	ptPixelDatas->iLineBytes    = ptPixelDatas->iWidth * ptPixelDatas->iBpp / 8;
 	ptPixelDatas->iTotalBytes   = ptPixelDatas->iHeight * ptPixelDatas->iLineBytes;
 	if (NULL == ptPixelDatas->aucPixelDatas)
@@ -150,7 +147,7 @@ static int Mjpeg2RgbConvert(PT_VideoBuf ptVideoBufIn, PT_VideoBuf ptVideoBufOut)
 
 	pucDest = ptPixelDatas->aucPixelDatas;
 
-	while (tDInfo.output_scanline < tDInfo.output_height) 
+	while (tDInfo.output_scanline < tDInfo.output_height)
 	{
 		(void) jpeg_read_scanlines(&tDInfo, &aucLineBuffer, 1);
 
