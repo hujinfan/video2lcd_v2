@@ -175,6 +175,7 @@ static int Mjpeg2RgbConvertExit(PT_VideoBuf ptVideoBufOut)
 static struct VideoConvert bModule = {
 	.name        = "mjpeg2rgb",
 	.isSupport   = isSupportMjpeg2Rgb,
+	.use_as_default = 0,
 	.Convert     = Mjpeg2RgbConvert,
 	.ConvertExit = Mjpeg2RgbConvertExit,
 };

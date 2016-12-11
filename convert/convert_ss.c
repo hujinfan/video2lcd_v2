@@ -54,7 +54,7 @@ void ShowVideoConvert(void)
  * 根据视频数据格式来选取一个合适的转换函数
  * 调用注册到视频管理模块中的各个子模块的support函数来判断
  */
-struct VideoConvert *GetVideoConvertForFormats(int iPixelFormatIn, int iPixelFormatOut)
+int find_support_convert_module(int iPixelFormatIn, int iPixelFormatOut)
 {
 	struct VideoConvert *pModule;
 
@@ -62,18 +62,24 @@ struct VideoConvert *GetVideoConvertForFormats(int iPixelFormatIn, int iPixelFor
 	{
 		if (pModule->isSupport(iPixelFormatIn, iPixelFormatOut))
 		{
+			pModule->use_as_default = 1;
 			printf("%s support!\n", pModule->name);
-			return pModule;
+			return 1;
 		}
 	}
 
-	return NULL;
+	return 0;
 }
 
-int video_convert2rgb(struct VideoConvert *pModule, struct VideoBuf *ptVideoBufIn, struct VideoBuf *ptVideoBufOut)
+int video_convert2rgb(struct VideoBuf *ptVideoBufIn, struct VideoBuf *ptVideoBufOut)
 {
-	int iError;
-	iError = pModule->Convert(ptVideoBufIn, ptVideoBufOut);
+	int iError = 0;
+	struct VideoConvert *pModule;
+
+	list_for_each_entry(pModule, &convert_list, list)
+		if (pModule->use_as_default)
+			iError = pModule->Convert(ptVideoBufIn, ptVideoBufOut);
+
 	return iError;
 }
 

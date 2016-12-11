@@ -23,6 +23,7 @@ static int isSupportYuv2Rgb(int iPixelFormatIn, int iPixelFormatOut)
 
 static struct VideoConvert bModule = {
 	.name = "yuv2rgb_name",
+	.use_as_default = 0,
 	.isSupport = isSupportYuv2Rgb,
 };
 

@@ -8,6 +8,7 @@
 
 struct VideoConvert {
 	char *name;
+	int use_as_default;
 	int (*isSupport)(int iPixelFormatIn, int iPixelFormatOut);
 	int (*Convert)(PT_VideoBuf ptVideoBufIn, PT_VideoBuf ptVideoBufOut);
 	int (*ConvertExit)(PT_VideoBuf ptVideoBufOut);
@@ -24,8 +25,8 @@ int Rgb2RgbInit(void);
 struct VideoConvert *convert_get_module(const char *name);
 int VideoConvertInit(void);
 void ShowVideoConvert(void);
-struct VideoConvert *GetVideoConvertForFormats(int iPixelFormatIn, int iPixelFormatOut);
-int video_convert2rgb(struct VideoConvert *pModule, struct VideoBuf *ptVideoBufIn, struct VideoBuf *ptVideoBufOut);
+int find_support_convert_module(int iPixelFormatIn, int iPixelFormatOut);
+int video_convert2rgb(struct VideoBuf *ptVideoBufIn, struct VideoBuf *ptVideoBufOut);
 void ShowVideoConvertInfo(struct VideoConvert *pModule);
 
 #endif

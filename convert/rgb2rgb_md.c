@@ -18,6 +18,7 @@ static int isSupportRgb2Rgb(int iPixelFormatIn, int iPixelFormatOut)
 
 static struct VideoConvert bModule = {
 	.name = "rgb2rgb_name",
+	.use_as_default = 0,
     .isSupport   = isSupportRgb2Rgb,
 };
 

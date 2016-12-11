@@ -68,7 +68,6 @@ int main(int argc, char *argv[])
 	int iPixelFormatOfDisp;
 	int iPixelFormatOfVideo;
 
-	struct VideoConvert *ptVideoConvert;
 	struct VideoBuf	*ptVideoBufCur;
 
 	struct VideoBuf tVideoBuf;//摄像头采集到的数据
@@ -135,14 +134,12 @@ int main(int argc, char *argv[])
 	ShowVideoConvert();
 
 	/* 根据采集到的视频数据格式选取一个合适的转换函数 */
-	ptVideoConvert = GetVideoConvertForFormats(iPixelFormatOfVideo, iPixelFormatOfDisp);
-	if (NULL == ptVideoConvert)
+	iError = find_support_convert_module(iPixelFormatOfVideo, iPixelFormatOfDisp);
+	if (!iError)
 	{
 		printf("can not support this format convert\n");
 		return -1;
 	}
-
-	ShowVideoConvertInfo(ptVideoConvert);
 
 	/* 启动摄像头 */
 	iError = start_camera();
@@ -181,7 +178,7 @@ int main(int argc, char *argv[])
 		/* 2. 判断是否需要转换为RGB */
 		if (iPixelFormatOfVideo != iPixelFormatOfDisp)
 		{
-			iError = video_convert2rgb(ptVideoConvert, &tVideoBuf, &tConvertBuf);
+			iError = video_convert2rgb(&tVideoBuf, &tConvertBuf);
 			if (iError)
 			{
 				printf("Convert error\n");
