@@ -11,6 +11,22 @@
 #define DEFAULT_DISPLAY_MODULE "fb"
 #define DEFAULT_VIDEO_MODULE "v4l2"
 
+void do_inits(void)
+{
+	/* 显示子系统和显示模块初始化,设置默认模块  */
+	display_init();
+	display_modules_init();
+	choose_default_display_module(DEFAULT_DISPLAY_MODULE);
+
+	/* 视频子系统和视频模块初始化, 设置默认模块 */
+	video_init();
+	video_modules_init();
+	choose_default_video_module(DEFAULT_VIDEO_MODULE);
+
+	/* 视频转换子系统初始化 */
+	VideoConvertInit();
+}
+
 int main(int argc, char *argv[])
 {
 	int i, j;
@@ -76,15 +92,11 @@ int main(int argc, char *argv[])
 	struct VideoBuf tFrameBuf;//最终刷入framebuf的数据
 
 	printf("Video2Lcd version 2.1 Time: %s\n", COMPILE_DATE);
-	/* 显示子系统初始化 */
-	display_init();
 
-	/* 所有显示模块初始化 */
-	display_modules_init();
+	/* 初始化工作 */
+	do_inits();
 
-	/* 选取一个默认的显示模块 */
-	choose_default_display_module(DEFAULT_DISPLAY_MODULE);
-
+	/* 获取显示参数 */
 	GetDispResolution(&iLcdWidth, &iLcdHeight, &iLcdBpp);
 	printf("LCD display format [%d x %d]\n", iLcdWidth, iLcdHeight);
 	lcd_row = iLcdWidth;
@@ -104,15 +116,7 @@ int main(int argc, char *argv[])
 	GetVideoBufForDisplay(&tFrameBuf);
 	iPixelFormatOfDisp = tFrameBuf.iPixelFormat;
 
-	/* 视频子系统初始化 */
-	video_init();
-
-	/* 初始化视频模块 */
-	video_modules_init();
-
-	/* 选择一个默认视频模块 */
-	choose_default_video_module(DEFAULT_VIDEO_MODULE);
-
+	/*  获取摄像头参数 */
 	get_camera_format(&cam_row, &cam_col, &iPixelFormatOfVideo);
 	printf("CAMERA data format [%d x %d]\n", cam_row, cam_col);
 
@@ -126,12 +130,6 @@ int main(int argc, char *argv[])
 	for (i = 0; i < cam_row; i++)
 		cam_mem[i] = (unsigned short *)malloc(sizeof(unsigned short) * cam_col);
 
-	/* 显示所有video模块 */
-	ShowVideoOpr();
-
-	/* 视频转换子系统初始化 */
-	VideoConvertInit();
-	ShowVideoConvert();
 
 	/* 根据采集到的视频数据格式选取一个合适的转换函数 */
 	iError = find_support_convert_module(iPixelFormatOfVideo, iPixelFormatOfDisp);
