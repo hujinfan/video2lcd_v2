@@ -35,9 +35,7 @@ int VideoConvertInit(void)
 
 	printf("Convert subsystem init\n");
 
-	iError = Yuv2RgbInit();
-	iError |= Mjpeg2RgbInit();
-	iError |= Rgb2RgbInit();
+	iError = Mjpeg2RgbInit();
 
 	return 0;
 }

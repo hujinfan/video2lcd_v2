@@ -94,7 +94,6 @@ static int CovertOneLine(int iWidth, int iSrcBpp, int iDstBpp, unsigned char *pu
 static int Mjpeg2RgbConvert(PT_VideoBuf ptVideoBufIn, PT_VideoBuf ptVideoBufOut)
 {
 	struct jpeg_decompress_struct tDInfo;
-	int iRet;
 	int iRowStride;
 	unsigned char *aucLineBuffer = NULL;
 	unsigned char *pucDest;
@@ -122,7 +121,7 @@ static int Mjpeg2RgbConvert(PT_VideoBuf ptVideoBufIn, PT_VideoBuf ptVideoBufOut)
 
 	jpeg_mem_src_tj (&tDInfo, ptVideoBufIn->tPixelDatas.aucPixelDatas, ptVideoBufIn->tPixelDatas.iTotalBytes);
 
-	iRet = jpeg_read_header(&tDInfo, TRUE);
+	jpeg_read_header(&tDInfo, TRUE);
 
 	tDInfo.scale_num = tDInfo.scale_denom = 1;
 

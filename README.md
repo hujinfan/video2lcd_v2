@@ -46,3 +46,8 @@ module : fb_md.c _md表示module后缀
 	:argdo! %s/MODULE/fb/ge | update
 
 手动修改顶层和子目录Makefile
+
+# make for android
+
+cp video2lcd_v2 external/
+mmm external/video2lcd_v2
