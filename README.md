@@ -51,3 +51,45 @@ module : fb_md.c _md表示module后缀
 
 cp video2lcd_v2 external/
 mmm external/video2lcd_v2
+
+# mini2440 x35
+
+```shell
+/*
+ * 分配两块内存区域用于临时存放视频数据
+ * 因为一个像素点用16bpp表示
+ * 所以数据类型用short
+ * 摄像头采集到的数据是320x240的,放入cam_mem
+ * LCD显示器的尺寸是240x320
+ * 把cam_mem里的数据放入lcd_mem
+ * 最后把lcd_mem放入到framebuffer
+ */
+
+/*
+ *
+ * cam_mem---->	-----------320------------>x
+ * 				|         |
+ * 				|         |
+ * 				240       |
+ * 				|---------p(x, y)
+ * 				|
+ * 				V
+ * 				y
+ */
+
+/*
+ *
+ * lcd_mem---->	------240----->x
+ * 				|    |
+ * 				|    |
+ * 				|----p(y, 320 - x)
+ * 				|
+ * 				320
+ * 				|
+ * 				|
+ * 				|
+ * 				|
+ * 				V
+ * 				y
+ */
+```
