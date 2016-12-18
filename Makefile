@@ -14,6 +14,7 @@ export STRIP OBJCOPY OBJDUMP
 
 CFLAGS := -Wall -Werror -O2 -g
 CFLAGS += -I $(shell pwd)/include
+CFLAGS += -DMINI2440_LCD_X35
 LDFLAGS := -lm -ljpeg
 
 TOPDIR := $(shell pwd)

@@ -54,6 +54,8 @@ mmm external/video2lcd_v2
 
 # mini2440 x35
 
+通过Makefile中MINI2440_LCD_X35宏来控制编译支持的竖屏X35
+
 ```shell
 /*
  * 分配两块内存区域用于临时存放视频数据

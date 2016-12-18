@@ -6,6 +6,7 @@
 #include "display_ss.h"
 #include "convert_ss.h"
 #include "video_ss.h"
+#include "compile_time.h"
 
 #define DEFAULT_DISPLAY_MODULE "fb"
 #define DEFAULT_VIDEO_MODULE "v4l2"
@@ -108,6 +109,16 @@ int PicMerge(int iX, int iY, PT_PixelDatas ptSmallPic, PT_PixelDatas ptBigPic)
 
 int main(int argc, char *argv[])
 {
+#ifdef MINI2440_LCD_X35
+	int i, j;
+	unsigned short **cam_mem;
+	unsigned short **lcd_mem;
+
+	/* 用于操作每一个像素点 */
+	unsigned short *s = NULL;
+	unsigned short *d = NULL;
+#endif
+
 	int lcd_row, lcd_col;
 	int cam_row, cam_col;
 	int iTopLeftX;
@@ -127,8 +138,11 @@ int main(int argc, char *argv[])
 	struct VideoBuf tConvertBuf;//转换后的数据
 	struct VideoBuf tZoomBuf;//缩放后的数据
 	struct VideoBuf tFrameBuf;//最终刷入framebuf的数据
+#ifdef MINI2440_LCD_X35
+	struct VideoBuf tRotateBuf;//旋转后的数据
+#endif
 
-	printf("Video2Lcd version 2.1\n");
+	printf("Video2Lcd version 2.1 %s\n", COMPILE_DATE);
 
 	/* 初始化工作 */
 	do_inits();
@@ -139,6 +153,18 @@ int main(int argc, char *argv[])
 	lcd_row = iLcdWidth;
 	lcd_col = iLcdHeight;
 
+#ifdef MINI2440_LCD_X35
+	/* 动态分配二维数组 */
+	lcd_mem = (unsigned short **)malloc(sizeof(unsigned short *) * lcd_row);
+	if (NULL == lcd_mem)
+	{
+		printf("no mem ERROR\n");
+		return -1;
+	}
+	for (i = 0; i < lcd_row; i++)
+		lcd_mem[i] = (unsigned short *)malloc(sizeof(unsigned short) * lcd_col);
+#endif
+
 	/* 设置framebuffer */
 	GetVideoBufForDisplay(&tFrameBuf);
 	iPixelFormatOfDisp = tFrameBuf.iPixelFormat;
@@ -146,6 +172,18 @@ int main(int argc, char *argv[])
 	/*  获取摄像头参数 */
 	get_camera_format(&cam_row, &cam_col, &iPixelFormatOfVideo);
 	printf("CAMERA data format [%d x %d]\n", cam_row, cam_col);
+
+#ifdef MINI2440_LCD_X35
+	/* 动态分配二维数组 */
+	cam_mem = (unsigned short **)malloc(sizeof(unsigned short *) * cam_row);
+	if (NULL == cam_mem)
+	{
+		printf("no mem ERROR\n");
+		return -1;
+	}
+	for (i = 0; i < cam_row; i++)
+		cam_mem[i] = (unsigned short *)malloc(sizeof(unsigned short) * cam_col);
+#endif
 
 	/* 根据采集到的视频数据格式选取一个合适的转换函数 */
 	iError = find_support_convert_module(iPixelFormatOfVideo, iPixelFormatOfDisp);
@@ -175,6 +213,10 @@ int main(int argc, char *argv[])
 	/* 3. 缩放后的数据区 */
 	memset(&tZoomBuf, 0, sizeof(T_VideoBuf));
 
+#ifdef MINI2440_LCD_X35
+	memset(&tRotateBuf, 0, sizeof(T_VideoBuf));
+#endif
+
 	/* 从摄像头读出数据后处理 */
 	while (1)
 	{
@@ -203,6 +245,33 @@ int main(int argc, char *argv[])
 			ptVideoBufCur = &tConvertBuf;
 		}
 
+		/* 旋转摄像头 */
+#ifdef MINI2440_LCD_X35
+		memcpy(&tRotateBuf, &tFrameBuf, sizeof(struct VideoBuf));
+		/* 操作源数据 */
+		s = (unsigned short *)ptVideoBufCur->tPixelDatas.aucPixelDatas;
+
+		/* 操作rotate buffer */
+		d = (unsigned short *)tRotateBuf.tPixelDatas.aucPixelDatas;
+
+		/* 把摄像头采集的数据放入cam_mem */
+		for (i = 0; i < cam_col; i++)
+			for (j = 0; j < cam_row; j++)
+				cam_mem[j][i] = *s++;
+
+		/* 把cam_mem里的数据转存到lcd_mem */
+		for (i = 0; i < cam_col; i++)
+			for (j = 0; j < cam_row; j++)
+				lcd_mem[i][cam_row - j] = cam_mem[j][i];
+
+		/* 把旋转后的数据放入rotate buffer */
+		for (i = 0; i < lcd_col; i++)
+			for (j = 0; j < lcd_row; j++)
+				*d++ = lcd_mem[j][i];
+
+		/* 使当前video buffer指针指向旋转后的buffer */
+		ptVideoBufCur = &tRotateBuf;
+#endif
 		/* 如果图像分辨率大于LCD, 缩放 */
 		if (ptVideoBufCur->tPixelDatas.iWidth > iLcdWidth || ptVideoBufCur->tPixelDatas.iHeight > iLcdHeight)
 		{
@@ -245,7 +314,6 @@ int main(int argc, char *argv[])
 		PicMerge(iTopLeftX, iTopLeftY, &ptVideoBufCur->tPixelDatas, &tFrameBuf.tPixelDatas);
 
 		FlushPixelDatasToDev(&tFrameBuf.tPixelDatas);
-
 		/* 释放该帧数据,重新放入采集视频的队列 */
 		iError = put_frame(&tVideoBuf);
 		if (iError)
@@ -255,5 +323,15 @@ int main(int argc, char *argv[])
 		}
 	}
 
+#ifdef MINI2440_LCD_X35
+	/* 释放内存 */
+    for (i = 0; i < lcd_row; i++)
+        free(lcd_mem[i]);
+    free(lcd_mem);
+
+    for (i = 0; i < cam_row; i++)
+        free(cam_mem[i]);
+    free(cam_mem);
+#endif
 	return 0;
 }
