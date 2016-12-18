@@ -1,6 +1,6 @@
 # 写在最前面的话
 
-本项目是卫东山视频监控的复刻版,做了如下改
+本项目是韦东山视频监控的复刻版,做了如下改
 
 - 所有链表操作使用和内核一致的接口(完全从Linux内核源代码移植过来的)
 - 支持mini2440 sony x35显示屏(添加视频旋转)
@@ -18,9 +18,25 @@
 
 # 文件说明
 
-main.c 应用模块,最顶层
+main.c 应用模块(最顶层)
 
-klist.h	list 操作的所有宏和函数,最底层
+klist.h	链表操作的所有宏和函数
+
+display_ss.c 显示子系统
+
+fb_md.c		 显示子模块
+
+convert_ss.c 转换子系统
+
+mjpeg2rgb_md.c 转换子模块
+
+rgb2rgb_md.c   转换子模块
+
+yuv2rgb_md.c   转换子模块
+
+video_ss.c 视频子系统
+
+v4l2_md.c 视频子模块
 
 # skeleton
 
@@ -55,8 +71,7 @@ module : fb_md.c _md表示module后缀
 
 # make for android
 
-cp video2lcd_v2 external/
-mmm external/video2lcd_v2
+参看Android.mk
 
 # mini2440 x35
 
